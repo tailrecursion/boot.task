@@ -1,10 +1,37 @@
 (ns tailrecursion.boot.task
-  (:require [tailrecursion.boot.core      :refer [make-event identity-task]]
+  (:require [tailrecursion.boot.core      :refer [make-event]]
             [clojure.pprint               :refer [pprint]]
             [digest                       :refer [md5]]
             [clojure.java.io              :refer [file]]
             [clojure.data                 :refer [diff]]
             [clojure.set                  :refer [difference intersection union]]))
+
+;; Task builders ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn pre-task
+  [boot & {:keys [process configure] :or {process identity configure identity}}]
+  (locking boot
+    (swap! boot configure) 
+    (fn [continue]
+      (fn [event]
+        (continue (process event))))))
+
+(defn post-task
+  [boot & {:keys [process configure] :or {process identity configure identity}}]
+  (locking boot
+    (swap! boot configure) 
+    (fn [continue]
+      (fn [event]
+        (process (continue event))))))
+
+;; A task that does nothing ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def identity-task pre-task)
+
+;; Task that just does configuration of boot env ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn config-task [boot configure]
+  (pre-task boot :configure configure))
 
 ;; Print the event ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
