@@ -76,14 +76,14 @@
         (reset! prev info)
         {:hash (by string? mods) :time (by number? mods)}))))
 
-(defn- print-time [msg f]
+(defn- print-time [msg ok fail f]
   (let [now!    #(System/currentTimeMillis)
         time*   #(let [start (now!)] (%) (double (/ (- (now!) start) 1000)))
         trace   #(with-out-str (print-cause-trace %))
         printf* (fn [& s] (apply printf s) (flush))]
-    (printf* "%s..." msg)
-    (try (printf* "done. (%.3f sec)\n" (time* f))
-      (catch Throwable e (printf* "dang!\n%s\n" (trace e))))))
+    (printf* msg)
+    (try (printf* ok (time* f))
+      (catch Throwable e (printf* fail (trace e))))))
 
 (defn wrap-watch [continue type dirs]
   (let [watchers (map make-watcher dirs)]
@@ -92,8 +92,10 @@
         (when-let [mods (seq (info type))] 
           (let [path  (.getPath (first mods))
                 xtr   (when-let [c (next mods)] (format " and %d others" (count c)))
-                msg   (format "Building %s%s" path (str xtr))]
-            (print-time msg #(continue (assoc event :watch info)))))))))
+                msg   (format "Building %s%s..." path (str xtr))
+                ok    "done. (%.3f sec)\n"
+                fail  "dang!\n%s\n"]
+            (print-time msg ok fail #(continue (assoc event :watch info)))))))))
 
 (defn watch [boot & [msec]]
   (let [dirs (:directories @boot)]
