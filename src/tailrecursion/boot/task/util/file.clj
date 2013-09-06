@@ -117,3 +117,16 @@
   (let [op {:cp #(copy-with-lastmod (nth % 1) (nth % 2))
             :rm #(.delete (nth % 1))}]
     (doall (map #((op (first %)) %) (apply diff algo dst src srcs)))))
+
+(defn make-watcher [dir]
+  (let [prev (atom nil)]
+    (fn []
+      (let [only-file #(filter file? %)
+            make-info #(vector [% (.lastModified %)] [% (md5 %)])
+            file-info #(mapcat make-info %)
+            info      (->> dir file file-seq only-file file-info set)
+            mods      (difference (union info @prev) (intersection info @prev))
+            by        #(->> %2 (filter (comp %1 second)) (map first) set)]
+        (reset! prev info)
+        {:hash (by string? mods) :time (by number? mods)}))))
+
