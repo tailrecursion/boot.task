@@ -7,5 +7,7 @@
  :tasks
  {:watch
   {:main [tailrecursion.boot.task/watch]}
+  :cljs
+  {:main [tailrecursion.boot.task/cljs "main.js"]}
   :debug
   {:main [tailrecursion.boot.task/debug]}}}

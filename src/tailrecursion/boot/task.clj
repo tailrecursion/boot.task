@@ -1,13 +1,17 @@
 (ns tailrecursion.boot.task
   (:refer-clojure :exclude [sync])
-  (:require [tailrecursion.boot.task.file :as f]
-            [tailrecursion.boot.core      :refer [make-event]]
-            [clojure.stacktrace           :refer [print-cause-trace]]
-            [clojure.string               :refer [split join blank?]]
-            [clojure.pprint               :refer [pprint]]
-            [digest                       :refer [md5]]
-            [clojure.java.io              :refer [file]]
-            [clojure.set                  :refer [difference intersection union]]))
+  (:require 
+    [cljs.closure                   :as cljs]
+    [tailrecursion.boot.task.file   :as f]
+    [tailrecursion.boot.core        :refer [make-event]]
+    [tailrecursion.boot.deps        :refer [deps]]
+    [tailrecursion.boot.tmpregistry :refer [mk! mkdir!]]
+    [clojure.stacktrace             :refer [print-cause-trace]]
+    [clojure.string                 :refer [split join blank?]]
+    [clojure.pprint                 :refer [pprint]]
+    [digest                         :refer [md5]]
+    [clojure.java.io                :refer [file delete-file make-parents]]
+    [clojure.set                    :refer [difference intersection union]]))
 
 ;; Task builders ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -66,8 +70,7 @@
 (defn- make-watcher [dir]
   (let [prev (atom nil)]
     (fn []
-      (let [file?     #(.isFile %)
-            only-file #(filter file? %)
+      (let [only-file #(filter f/file? %)
             make-info #(vector [% (.lastModified %)] [% (md5 %)])
             file-info #(mapcat make-info %)
             info      (->> dir file file-seq only-file file-info set)
@@ -90,7 +93,7 @@
     (fn [event]
       (let [info (reduce (partial merge-with union) (map #(%) watchers))]
         (when-let [mods (seq (info type))] 
-          (let [path  (.getPath (first mods))
+          (let [path  (f/path (first mods))
                 xtr   (when-let [c (next mods)] (format " and %d others" (count c)))
                 msg   (format "Building %s%s..." path (str xtr))
                 ok    "done. (%.3f sec)\n"
@@ -111,3 +114,64 @@
 
 (defn sync [boot dst srcs]
   #(wrap-sync % dst srcs))
+
+;; Compile ClojureScript ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defrecord CljsSourcePaths [paths]
+  cljs/Compilable
+  (-compile [this opts]
+    (mapcat #(cljs/-compile % opts) paths)))
+
+(let [last-counter (atom 0)]
+  (def cljs-counter! #(swap! last-counter inc)))
+
+(defn install-cljs-deps! [src-paths depjars incs exts libs flibs]
+  (let [match     #(last (re-find #"[^.]+\.([^.]+)\.js$" %))
+        dirmap    {"inc" incs "ext" exts "lib" libs "flib" flibs}
+        outfile   #(file %1 (str (format "%010d" (cljs-counter!)) "_" (f/name %2)))
+        write1    #(when-let [d (dirmap (match %1))]
+                     (spit (doto (outfile d %1) make-parents) (slurp %2))) 
+        write     #(map (partial apply write1) %)
+        path-seq  (fn [x] (map f/path (file-seq (file x))))
+        dep-files (->> depjars (map second) (mapcat identity))
+        src-files (->> src-paths (mapcat path-seq) (keep f/file?))]
+    (doall (->> dep-files reverse write))
+    (doall (->> src-files sort (map (juxt identity file)) write))))
+
+(defn wrap-cljs [continue src-paths depjars flib-out lib-out ext-out inc-out opts]
+  (assert (:output-to opts) "No :output-to option specified.")
+  (fn [event]
+    (f/clean! (:output-to opts) flib-out lib-out ext-out inc-out)
+    (install-cljs-deps! src-paths depjars inc-out ext-out lib-out flib-out) 
+    (let [{:keys [output-to]} opts
+          files #(filter f/file? (file-seq %))
+          paths #(mapv f/path (files %))
+          cat   #(join "\n" (mapv slurp %)) 
+          srcs  (CljsSourcePaths. src-paths)
+          exts  (paths ext-out)
+          incs  (cat (sort (files inc-out)))]
+      (cljs/build srcs (update-in opts [:externs] into exts))
+      (spit output-to (str incs "\n" (slurp output-to)))
+      (continue event))))
+
+(defn cljs [boot output-to & [opts]]
+  (let [base-opts   {:output-dir    nil
+                     :optimizations :whitespace
+                     :warnings      true
+                     :externs       []
+                     :libs          []
+                     :foreign-libs  []
+                     :pretty-print  true}
+        src-paths   (:directories @boot)
+        tmp         (get-in @boot [:system :tmpregistry])
+        depjars     (deps boot)
+        output-dir  (mkdir! tmp ::output-dir)
+        flib-out    (mkdir! tmp ::flib-out)
+        lib-out     (mkdir! tmp ::lib-out)
+        ext-out     (mkdir! tmp ::ext-out)
+        inc-out     (mkdir! tmp ::inc-out)
+        x-opts      (->> {:output-to  (f/path output-to)
+                          :output-dir output-dir}
+                      (merge base-opts opts))]
+    #(wrap-cljs % src-paths depjars flib-out lib-out ext-out inc-out x-opts)))
+
