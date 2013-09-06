@@ -1,9 +1,12 @@
 (ns tailrecursion.boot.task
-  (:require [tailrecursion.boot.core      :refer [make-event]]
+  (:refer-clojure :exclude [sync])
+  (:require [tailrecursion.boot.task.file :as f]
+            [tailrecursion.boot.core      :refer [make-event]]
+            [clojure.stacktrace           :refer [print-cause-trace]]
+            [clojure.string               :refer [split join blank?]]
             [clojure.pprint               :refer [pprint]]
             [digest                       :refer [md5]]
             [clojure.java.io              :refer [file]]
-            [clojure.data                 :refer [diff]]
             [clojure.set                  :refer [difference intersection union]]))
 
 ;; Task builders ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -49,7 +52,7 @@
 (defn wrap-auto [continue & [msec]]
   (fn [event]
     (continue event)
-    (Thread/sleep (or msec 200))
+    (Thread/sleep (or msec 200)) 
     (recur (make-event event))))
 
 (defn auto [boot & [msec]]
@@ -73,13 +76,36 @@
         (reset! prev info)
         {:hash (by string? mods) :time (by number? mods)}))))
 
+(defn- print-time [msg f]
+  (let [now!    #(System/currentTimeMillis)
+        time*   #(let [start (now!)] (%) (double (/ (- (now!) start) 1000)))
+        trace   #(with-out-str (print-cause-trace %))
+        printf* (fn [& s] (apply printf s) (flush))]
+    (printf* "%s..." msg)
+    (try (printf* "done. (%.3f sec)\n" (time* f))
+      (catch Throwable e (printf* "dang!\n%s\n" (trace e))))))
+
 (defn wrap-watch [continue type dirs]
   (let [watchers (map make-watcher dirs)]
     (fn [event]
       (let [info (reduce (partial merge-with union) (map #(%) watchers))]
-        (when-not (empty? (info type))
-          (continue (assoc event :watch info)))))))
+        (when-let [mods (seq (info type))] 
+          (let [path  (.getPath (first mods))
+                xtr   (when-let [c (next mods)] (format " and %d others" (count c)))
+                msg   (format "Building %s%s" path (str xtr))]
+            (print-time msg #(continue (assoc event :watch info)))))))))
 
 (defn watch [boot & [msec]]
   (let [dirs (:directories @boot)]
     (comp (auto boot msec) #(wrap-watch % :time dirs))))
+
+;; Sync (copy) files between directories ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn wrap-sync [continue type dst srcs]
+  (let [dst (file dst), srcs (map file srcs)]
+    (fn [event]
+      (apply f/sync type dst srcs)
+      (continue event))))
+
+(defn sync [boot dst srcs]
+  #(wrap-sync % dst srcs))
