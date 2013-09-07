@@ -1,4 +1,4 @@
-(ns tailrecursion.boot.task.file
+(ns tailrecursion.boot.task.util.file
   (:require
     [digest           :as d]
     [clojure.data     :as data]
@@ -122,7 +122,7 @@
   (let [prev (atom nil)]
     (fn []
       (let [only-file #(filter file? %)
-            make-info #(vector [% (.lastModified %)] [% (md5 %)])
+            make-info #(vector [% (.lastModified %)] [% (d/md5 %)])
             file-info #(mapcat make-info %)
             info      (->> dir file file-seq only-file file-info set)
             mods      (difference (union info @prev) (intersection info @prev))

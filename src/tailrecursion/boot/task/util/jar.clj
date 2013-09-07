@@ -3,7 +3,7 @@
     [tailrecursion.boot.task.util.file  :as f]
     [tailrecursion.boot.task.util.pom   :refer [extract-ids]]
     [clojure.pprint                     :refer [pprint]]
-    [clojure.java.io                    :refer [input-stream output-stream file delete-file make-parents]])
+    [clojure.java.io                    :refer [copy input-stream output-stream file delete-file make-parents]])
   (:import
     [java.io File]
     [java.util.jar JarOutputStream JarEntry Manifest Attributes Attributes$Name]))
@@ -32,7 +32,7 @@
           (recur (.read in buf)))))))
 
 (defn- add! [^JarOutputStream target ^File base ^File src]
-  (let [rel #(f/path (f/relative-to %1 %2))
+  (let [rel #(.getPath (f/relative-to %1 %2))
         ent #(doto (JarEntry. (rel %1 %2)) (.setTime (.lastModified %2)))]
     (if (f/dir? src)
       (doseq [f (.listFiles src)] (add! target base f))
@@ -40,14 +40,15 @@
 
 (defn create-jar! [project version src-dirs output-dir tmp-dir & {:keys [main manifest pom]}]
   (let [[group-id artifact-id] (extract-ids project)
-        pom-xml  ((if (f/file? pom) slurp str) pom) 
-        manifest (make-manifest main manifest)
-        jar-name (str (if artifact-id (str artifact-id "-" version) "out") ".jar") 
-        jar-file (file output-dir jar-name)
-        pom-path ["META-INF" "maven" group-id artifact-id "pom.xml"] 
-        pom-file (doto (apply file tmp-dir pom-path) make-parents)]
+        pom-xml   ((if (f/file? pom) slurp str) pom) 
+        boot-clj  (f/exists? (file "boot.clj"))
+        manifest  (make-manifest main manifest)
+        jar-name  (str (if artifact-id (str artifact-id "-" version) "out") ".jar") 
+        jar-file  (file output-dir jar-name)
+        pom-path  ["META-INF" "maven" group-id artifact-id "pom.xml"] 
+        pom-file  (doto (apply file tmp-dir pom-path) make-parents)]
     (with-open [j (JarOutputStream. (output-stream jar-file) manifest)]
-      (when pom-xml
-        (spit pom-file pom-xml)
-        (add! j tmp-dir tmp-dir))
+      (when pom-xml (spit pom-file pom-xml)) 
+      (when boot-clj (copy boot-clj (file tmp-dir "boot.clj"))) 
+      (add! j tmp-dir tmp-dir)
       (doseq [d src-dirs] (add! j d d)))))

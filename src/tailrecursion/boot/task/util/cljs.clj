@@ -28,16 +28,19 @@
     (doall (->> dep-files reverse write))
     (doall (->> src-files sort (map (juxt identity file)) write))))
 
-(defn compile-cljs [src-paths depjars flib-out lib-out ext-out inc-out opts]
-  (assert (:output-to opts) "No :output-to option specified.")
-  (f/clean! (:output-to opts) flib-out lib-out ext-out inc-out)
-  (install-deps src-paths depjars inc-out ext-out lib-out flib-out) 
-  (let [{:keys [output-to]} opts
-        files #(filter f/file? (file-seq %))
-        paths #(mapv f/path (files %))
-        cat   #(join "\n" (mapv slurp %)) 
-        srcs  (CljsSourcePaths. src-paths)
-        exts  (paths ext-out)
-        incs  (cat (sort (files inc-out)))]
-    (cljs/build srcs (update-in opts [:externs] into exts))
-    (spit output-to (str incs "\n" (slurp output-to)))))
+(defn compile-cljs
+  [src-paths depjars flib-out lib-out ext-out inc-out {:keys [output-to] :as opts}]
+  (assert output-to "No :output-to option specified.")
+  (when (-> (->> src-paths (map file) (mapcat file-seq) (filter f/file?)) 
+            (->> (map f/name) (filter (partial re-find #"\.cljs$")) seq)) 
+    (make-parents output-to) 
+    (f/clean! output-to flib-out lib-out ext-out inc-out) 
+    (install-deps src-paths depjars inc-out ext-out lib-out flib-out) 
+    (let [files #(filter f/file? (file-seq %))
+          paths #(mapv f/path (files %))
+          cat   #(join "\n" (mapv slurp %)) 
+          srcs  (CljsSourcePaths. src-paths)
+          exts  (paths ext-out)
+          incs  (cat (sort (files inc-out)))]
+      (cljs/build srcs (update-in opts [:externs] into exts))
+      (spit output-to (str incs "\n" (slurp output-to))))))
