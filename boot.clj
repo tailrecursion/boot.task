@@ -5,13 +5,10 @@
 {:project tailrecursion/tasktest
  :version "0.1.0-SNAPSHOT"
  :dependencies [[tailrecursion/boot.task "0.1.0-SNAPSHOT"]]
- :directories #{"test"}
+ :require-tasks [[tailrecursion.boot.task :as x]]
+ :src-paths #{"test"}
  :tasks
- {:watch
-  {:main [tailrecursion.boot.task/watch]}
-  :cljs
-  {:main [tailrecursion.boot.task/cljs]}
-  :jar
-  {:main [tailrecursion.boot.task/jar]}
-  :debug
-  {:main [tailrecursion.boot.task/debug]}}}
+ {:heyho
+  {:doc "testing 1 2 3..."
+   :dependencies [[alandipert/enduro "1.1.2"]]}
+  }}

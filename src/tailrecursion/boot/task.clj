@@ -8,17 +8,31 @@
     [tailrecursion.boot.core            :refer [deftask make-event]]
     [tailrecursion.boot.deps            :refer [deps]]
     [tailrecursion.boot.tmpregistry     :refer [mk! mkdir!]]
+    [clojure.string                     :refer [blank? join]]
     [clojure.stacktrace                 :refer [print-stack-trace print-cause-trace]]
     [clojure.pprint                     :refer [pprint]]
     [clojure.java.io                    :refer [file delete-file make-parents]]
-    [clojure.set                        :refer [difference intersection union]]))
+    [clojure.set                        :refer [difference intersection union]])
+  (:import
+    [java.io StringWriter]))
 
-(defmacro print-time [msg ok fail expr]
+(defmacro with-out-err-str [& body]
+  `(let [out# (new StringWriter)
+         err# (new StringWriter)]
+     (binding [*out* out#, *err* err#]
+       ~@body
+       [(str out#) (str err#)])))
+
+(defmacro print-time [msg ok out fail expr]
   `(let [start# (System/currentTimeMillis)]
      (try
        (printf ~msg)
        (flush)
-       (printf ~ok (do ~expr (double (/ (- (System/currentTimeMillis) start#) 1000))))
+       (let [printed# (with-out-err-str ~expr)
+             end# (double (/ (- (System/currentTimeMillis) start#) 1000))]
+         (if (some (complement blank?) printed#)
+           (printf ~out (join "\n\n" (remove blank? printed#)) end#)
+           (printf ~ok end#)))
        (catch Throwable e#
          (printf ~fail (with-out-str (print-cause-trace e# 10))
                        (double (/ (- (System/currentTimeMillis) start#) 1000))))
@@ -57,8 +71,19 @@
 (defn config-task [boot configure]
   (pre-task boot :configure configure))
 
-;; Print the event ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Print the boot environment ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(deftask env
+  "Print the boot configuration."
+  [boot]
+  (fn [continue]
+    (let [env @boot]
+      (fn [event]
+        (pprint env)
+        (flush)
+        (continue event)))))
+
+;; Print the event ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (deftask debug
   "Print the event map."
@@ -84,12 +109,12 @@
         (Thread/sleep (or msec 200)) 
         (recur (make-event event))))))
 
-;; Process event if watched directories have modified files in them ;;;;;;;;;;;
+;; Process event if watched src-paths have modified files in them ;;;;;;;;;;;
 
 (deftask watch
-  "Watch :directories and rebuild when files change."
+  "Watch :src-paths and rebuild when files change."
   [boot & {:keys [type msec]}]
-  (let [dirs      (:directories @boot)
+  (let [dirs      (:src-paths @boot)
         watchers  (map f/make-watcher dirs)
         since     (atom 0)]
     (comp
@@ -102,11 +127,12 @@
                     xtr   (when-let [c (and (next mods) (count (next mods)))]
                             (format " and %d other%s" c (if (< 1 c) "s" "")))
                     msg   (format "Building %s%s ... " path (str xtr))
-                    ok    "done. %.3f sec - 00:00:00 "
+                    ok    "okay. %.3f sec - 00:00:00 "
+                    out   (format "info:\n\n%%s\nBuilding %s ... okay. %%.3f sec - 00:00:00 " path)
                     fail  (format "dang!\n\n%%s\nBuilding %s ... fail. %%.3f sec - 00:00:00 " path)]
                 (when (not= 0 @since) (println) (flush)) 
                 (reset! since (:time event))
-                (print-time msg ok fail (continue (assoc event :watch info))))
+                (print-time msg ok out fail (continue (assoc event :watch info))))
               (let [diff  (long (/ (- (:time event) @since) 1000))
                     pad   (apply str (repeat 9 "\b"))
                     s     (mod diff 60)
@@ -134,7 +160,7 @@
                      :foreign-libs  []
                      :pretty-print  true}
         output-to   (or (file output-to) (file (:public @boot) "main.js"))
-        src-paths   (:directories @boot)
+        src-paths   (:src-paths @boot)
         tmp         (get-in @boot [:system :tmpregistry])
         depjars     (deps boot)
         output-dir  (mkdir! tmp ::output-dir)
@@ -154,10 +180,10 @@
   [boot & {:keys [output-dir main manifest]}]
   (assert (and (:project @boot) (:version @boot))
           "Both :project and :version must be defined.")
-  (let [{:keys [project version repositories dependencies directories]} @boot
-        directories (map file directories)
+  (let [{:keys [project version repositories dependencies src-paths]} @boot
+        src-paths (map file src-paths)
         output-dir  (doto (file (or output-dir (:target @boot))) (.mkdirs))
         tmp         (get-in @boot [:system :tmpregistry])
         tmp-dir     (mkdir! tmp ::jar-tmp-dir)
-        pom-xml     (make-pom project version repositories dependencies directories)]
-    #((pass-thru-wrap create-jar!) % project version directories output-dir tmp-dir :main main :manifest manifest :pom pom-xml)))
+        pom-xml     (make-pom project version repositories dependencies src-paths)]
+    #((pass-thru-wrap create-jar!) % project version src-paths output-dir tmp-dir :main main :manifest manifest :pom pom-xml)))
