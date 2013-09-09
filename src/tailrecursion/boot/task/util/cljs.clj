@@ -39,7 +39,7 @@
     (let [files #(filter f/file? (file-seq %))
           paths #(mapv f/path (files %))
           cat   #(join "\n" (mapv slurp %)) 
-          srcs  (CljsSourcePaths. src-paths)
+          srcs  (CljsSourcePaths. (filter #(.exists (file %)) src-paths))
           exts  (paths ext-out)
           incs  (cat (sort (files inc-out)))]
       (cljs/build srcs (update-in opts [:externs] into exts))

@@ -23,7 +23,7 @@
   [f base & parts]
   (->> (file f)
     (relative-to (file base))
-    path
+    (.getPath)
     file
     (iterate #(.getParentFile %))
     (take-while identity)
@@ -32,7 +32,7 @@
     (concat (reverse parts))
     reverse
     (apply file)
-    path))
+    (.getPath)))
 
 (defn lockfile
   [f]
@@ -48,7 +48,7 @@
 
 (defn srcdir->outdir
   [fname srcdir outdir]
-  (path (file outdir (path (relative-to (file srcdir) (file fname))))))
+  (.getPath (file outdir (.getPath (relative-to (file srcdir) (file fname))))))
 
 (defn delete-all
   [dir]
@@ -64,7 +64,7 @@
 (defn copy-files
   [src dest]
   (if (exists? src)
-    (let [files  (map #(path %) (filter file? (file-seq (file src)))) 
+    (let [files  (map #(.getPath %) (filter file? (file-seq (file src)))) 
           outs   (map #(srcdir->outdir % src dest) files)]
       (mapv copy-with-lastmod (map file files) (map file outs)))))
 
@@ -83,7 +83,7 @@
   [& dirs]
   (->>
     (apply dir-set (mapv file dirs))
-    (mapv #(vector (path (:rel %)) %))
+    (mapv #(vector (.getPath (:rel %)) %))
     (into {})))
 
 (defn dir-map-ext
