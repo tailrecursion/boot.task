@@ -11,4 +11,6 @@
  {:heyho
   {:doc "testing 1 2 3..."
    :dependencies [[alandipert/enduro "1.1.2"]]}
-  }}
+  :test 
+  {:doc "test local dir..."
+   :main [tailrecursion.boot.task-test/main]}}}
