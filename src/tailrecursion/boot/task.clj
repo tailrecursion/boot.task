@@ -114,7 +114,8 @@
 (deftask watch
   "Watch :src-paths and rebuild when files change."
   [boot & {:keys [type msec]}]
-  (let [dirs      (:src-paths @boot)
+  (let [;; FIXME don't #'remove when gitignore is implemented
+        dirs      (remove #(.startsWith % ".boot") (:src-paths @boot)) 
         watchers  (map f/make-watcher dirs)
         since     (atom 0)]
     (comp
