@@ -15,7 +15,7 @@
   (defn- dep-counter! []
     (swap! last-counter inc)))
 
-(defn- install-deps [src-paths depjars incs exts libs flibs]
+(defn install-deps [src-paths depjars incs exts libs flibs]
   (let [match     #(last (re-find #"[^.]+\.([^.]+)\.js$" %))
         dirmap    {"inc" incs "ext" exts "lib" libs "flib" flibs}
         outfile   #(file %1 (str (format "%010d" (dep-counter!)) "_" (f/name %2)))
@@ -33,9 +33,6 @@
   (assert output-to "No :output-to option specified.")
   (when (-> (->> src-paths (map file) (mapcat file-seq) (filter f/file?)) 
             (->> (map f/name) (filter (partial re-find #"\.cljs$")) seq)) 
-    (make-parents output-to) 
-    (f/clean! output-to flib-out lib-out ext-out inc-out) 
-    (install-deps src-paths depjars inc-out ext-out lib-out flib-out) 
     (let [files #(filter f/file? (file-seq %))
           paths #(mapv f/path (files %))
           cat   #(join "\n" (mapv slurp %)) 

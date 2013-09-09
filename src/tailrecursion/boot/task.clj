@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [sync])
   (:require 
     [tailrecursion.boot.task.util.file  :as f]
-    [tailrecursion.boot.task.util.cljs  :refer [compile-cljs]]
+    [tailrecursion.boot.task.util.cljs  :refer [install-deps compile-cljs]]
     [tailrecursion.boot.task.util.pom   :refer [make-pom]]
     [tailrecursion.boot.task.util.jar   :refer [create-jar!]]
     [tailrecursion.boot.core            :refer [deftask make-event]]
@@ -172,6 +172,9 @@
         x-opts      (->> {:output-to  (f/path output-to)
                           :output-dir output-dir}
                       (merge base-opts opts))]
+    (make-parents output-to) 
+    (f/clean! output-to flib-out lib-out ext-out inc-out) 
+    (install-deps src-paths depjars inc-out ext-out lib-out flib-out)
     #((pass-thru-wrap compile-cljs) % src-paths depjars flib-out lib-out ext-out inc-out x-opts)))
 
 ;; Build jar files ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
