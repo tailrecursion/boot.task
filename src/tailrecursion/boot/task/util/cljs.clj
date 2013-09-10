@@ -1,7 +1,7 @@
 (ns tailrecursion.boot.task.util.cljs
   (:require 
     [cljs.closure                       :as cljs]
-    [tailrecursion.boot.task.util.file  :as f]
+    [tailrecursion.boot.file            :as f]
     [clojure.string                     :refer [split join blank?]]
     [clojure.pprint                     :refer [pprint]]
     [clojure.java.io                    :refer [input-stream output-stream file delete-file make-parents]]))

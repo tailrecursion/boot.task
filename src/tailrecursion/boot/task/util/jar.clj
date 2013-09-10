@@ -1,6 +1,6 @@
 (ns tailrecursion.boot.task.util.jar 
   (:require 
-    [tailrecursion.boot.task.util.file  :as f]
+    [tailrecursion.boot.file            :as f]
     [tailrecursion.boot.task.util.pom   :refer [extract-ids]]
     [clojure.pprint                     :refer [pprint]]
     [clojure.java.io                    :refer [copy input-stream output-stream file delete-file make-parents]])

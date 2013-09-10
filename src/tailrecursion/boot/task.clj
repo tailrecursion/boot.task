@@ -1,13 +1,13 @@
 (ns tailrecursion.boot.task
   (:refer-clojure :exclude [sync])
   (:require 
-    [tailrecursion.boot.task.util.file  :as f]
+    [tailrecursion.boot.file            :as f]
     [tailrecursion.boot.task.util.cljs  :refer [install-deps compile-cljs]]
     [tailrecursion.boot.task.util.pom   :refer [make-pom]]
     [tailrecursion.boot.task.util.jar   :refer [create-jar!]]
     [tailrecursion.boot.core            :refer [deftask make-event]]
     [tailrecursion.boot.deps            :refer [deps]]
-    [tailrecursion.boot.tmpregistry     :refer [mk! mkdir!]]
+    [tailrecursion.boot.tmpregistry     :refer [mk! mkdir! add-sync! sync! tmpfile?]]
     [clojure.string                     :refer [blank? join]]
     [clojure.stacktrace                 :refer [print-stack-trace print-cause-trace]]
     [clojure.pprint                     :refer [pprint]]
@@ -114,8 +114,8 @@
 (deftask watch
   "Watch :src-paths and rebuild when files change."
   [boot & {:keys [type msec]}]
-  (let [;; FIXME don't #'remove when gitignore is implemented
-        dirs      (remove #(.startsWith % ".boot") (:src-paths @boot)) 
+  (let [tmp       (get-in @boot [:system :tmpregistry])
+        dirs      (remove (partial tmpfile? tmp) (:src-paths @boot)) 
         watchers  (map f/make-watcher dirs)
         since     (atom 0)]
     (comp
@@ -139,6 +139,7 @@
                     s     (mod diff 60)
                     m     (mod (long (/ diff 60)) 60)
                     h     (mod (long (/ diff 3600)) 24)]
+                (sync! tmp)
                 (printf "%s%02d:%02d:%02d " pad h m s)
                 (flush)))))))))
 
@@ -147,7 +148,9 @@
 (deftask sync
   "Copy/sync files between directories."
   [boot dst srcs]
-  #((pass-thru-wrap f/sync) % (file dst) (map file srcs)))
+  (let [tmp (get-in @boot [:system :tmpregistry])]
+    (apply add-sync! tmp dst srcs)
+    (identity-task boot)))
 
 ;; Compile ClojureScript ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
