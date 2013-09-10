@@ -122,7 +122,7 @@
       (fn [continue]
         (fn [event]
           (let [info  (reduce (partial merge-with union) (map #(%) watchers))]
-            (if-let [mods (seq (info (or type :time)))] 
+            (if-let [mods (seq (get info (or type :time)))] 
               (let [path  (f/path (first mods))
                     xtr   (when-let [c (and (next mods) (count (next mods)))]
                             (format " and %d other%s" c (if (< 1 c) "s" "")))
