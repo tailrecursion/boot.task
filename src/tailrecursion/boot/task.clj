@@ -2,11 +2,12 @@
   (:refer-clojure :exclude [sync])
   (:require 
     [tailrecursion.boot.file            :as f]
+    [tailrecursion.boot.gitignore       :as g]
     [tailrecursion.boot.task.util.cljs  :refer [install-deps compile-cljs]]
     [tailrecursion.boot.task.util.pom   :refer [make-pom]]
     [tailrecursion.boot.task.util.jar   :refer [create-jar!]]
     [tailrecursion.boot.core            :refer [deftask make-event mk! mkdir!
-                                                add-sync! sync! tmpfile?]]
+                                                add-sync! sync! tmpfile? ignored?]]
     [tailrecursion.boot.deps            :refer [deps]]
     [clojure.string                     :refer [blank? join]]
     [clojure.stacktrace                 :refer [print-stack-trace print-cause-trace]]
@@ -115,6 +116,7 @@
   "Watch :src-paths and rebuild when files change."
   [boot & {:keys [type msec]}]
   (let [dirs      (remove (partial tmpfile? boot) (:src-paths @boot)) 
+        ign?      (partial ignored? boot)
         watchers  (map f/make-watcher dirs)
         since     (atom 0)]
     (comp
@@ -122,7 +124,7 @@
       (fn [continue]
         (fn [event]
           (let [info  (reduce (partial merge-with union) (map #(%) watchers))]
-            (if-let [mods (seq (get info (or type :time)))] 
+            (if-let [mods (->> (or type :time) (get info) (map file) (remove ign?) seq)]
               (let [path  (f/path (first mods))
                     xtr   (when-let [c (and (next mods) (count (next mods)))]
                             (format " and %d other%s" c (if (< 1 c) "s" "")))
