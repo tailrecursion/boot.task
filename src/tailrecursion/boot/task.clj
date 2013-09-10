@@ -5,9 +5,9 @@
     [tailrecursion.boot.task.util.cljs  :refer [install-deps compile-cljs]]
     [tailrecursion.boot.task.util.pom   :refer [make-pom]]
     [tailrecursion.boot.task.util.jar   :refer [create-jar!]]
-    [tailrecursion.boot.core            :refer [deftask make-event]]
+    [tailrecursion.boot.core            :refer [deftask make-event mk! mkdir!
+                                                add-sync! sync! tmpfile?]]
     [tailrecursion.boot.deps            :refer [deps]]
-    [tailrecursion.boot.tmpregistry     :refer [mk! mkdir! add-sync! sync! tmpfile?]]
     [clojure.string                     :refer [blank? join]]
     [clojure.stacktrace                 :refer [print-stack-trace print-cause-trace]]
     [clojure.pprint                     :refer [pprint]]
@@ -114,8 +114,7 @@
 (deftask watch
   "Watch :src-paths and rebuild when files change."
   [boot & {:keys [type msec]}]
-  (let [tmp       (get-in @boot [:system :tmpregistry])
-        dirs      (remove (partial tmpfile? tmp) (:src-paths @boot)) 
+  (let [dirs      (remove (partial tmpfile? boot) (:src-paths @boot)) 
         watchers  (map f/make-watcher dirs)
         since     (atom 0)]
     (comp
@@ -139,7 +138,7 @@
                     s     (mod diff 60)
                     m     (mod (long (/ diff 60)) 60)
                     h     (mod (long (/ diff 3600)) 24)]
-                (sync! tmp)
+                (sync! boot)
                 (printf "%s%02d:%02d:%02d " pad h m s)
                 (flush)))))))))
 
@@ -148,9 +147,8 @@
 (deftask sync
   "Copy/sync files between directories."
   [boot dst srcs]
-  (let [tmp (get-in @boot [:system :tmpregistry])]
-    (apply add-sync! tmp dst srcs)
-    (identity-task boot)))
+  (apply add-sync! boot dst srcs)
+  (identity-task boot))
 
 ;; Compile ClojureScript ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -165,13 +163,12 @@
                      :pretty-print  true}
         output-to   (or (file output-to) (file (:public @boot) "main.js"))
         src-paths   (:src-paths @boot)
-        tmp         (get-in @boot [:system :tmpregistry])
         depjars     (deps boot)
-        output-dir  (mkdir! tmp ::output-dir)
-        flib-out    (mkdir! tmp ::flib-out)
-        lib-out     (mkdir! tmp ::lib-out)
-        ext-out     (mkdir! tmp ::ext-out)
-        inc-out     (mkdir! tmp ::inc-out)
+        output-dir  (mkdir! boot ::output-dir)
+        flib-out    (mkdir! boot ::flib-out)
+        lib-out     (mkdir! boot ::lib-out)
+        ext-out     (mkdir! boot ::ext-out)
+        inc-out     (mkdir! boot ::inc-out)
         x-opts      (->> {:output-to  (f/path output-to)
                           :output-dir output-dir}
                       (merge base-opts opts))]
@@ -190,7 +187,6 @@
   (let [{:keys [project version repositories dependencies src-paths]} @boot
         src-paths (map file src-paths)
         output-dir  (doto (file (or output-dir (:target @boot))) (.mkdirs))
-        tmp         (get-in @boot [:system :tmpregistry])
-        tmp-dir     (mkdir! tmp ::jar-tmp-dir)
+        tmp-dir     (mkdir! boot ::jar-tmp-dir)
         pom-xml     (make-pom project version repositories dependencies src-paths)]
     #((pass-thru-wrap create-jar!) % project version src-paths output-dir tmp-dir :main main :manifest manifest :pom pom-xml)))
