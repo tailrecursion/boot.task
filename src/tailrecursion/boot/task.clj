@@ -3,17 +3,18 @@
   (:require 
     [tailrecursion.boot.file            :as f]
     [tailrecursion.boot.gitignore       :as g]
+    [reply.main                         :refer [launch-nrepl]]
+    [clojure.pprint                     :refer [pprint]]
+    [clojure.string                     :refer [blank? join]]
+    [clojure.java.io                    :refer [file delete-file make-parents]]
+    [clojure.set                        :refer [difference intersection union]]
+    [clojure.stacktrace                 :refer [print-stack-trace print-cause-trace]]
+    [tailrecursion.boot.deps            :refer [deps]]
     [tailrecursion.boot.task.util.cljs  :refer [install-deps compile-cljs]]
     [tailrecursion.boot.task.util.pom   :refer [make-pom]]
     [tailrecursion.boot.task.util.jar   :refer [create-jar!]]
     [tailrecursion.boot.core            :refer [deftask make-event mk! mkdir!
-                                                add-sync! sync! tmpfile? ignored?]]
-    [tailrecursion.boot.deps            :refer [deps]]
-    [clojure.string                     :refer [blank? join]]
-    [clojure.stacktrace                 :refer [print-stack-trace print-cause-trace]]
-    [clojure.pprint                     :refer [pprint]]
-    [clojure.java.io                    :refer [file delete-file make-parents]]
-    [clojure.set                        :refer [difference intersection union]])
+                                                add-sync! sync! tmpfile? ignored?]])
   (:import
     [java.io StringWriter]))
 
@@ -192,3 +193,8 @@
         tmp-dir     (mkdir! boot ::jar-tmp-dir)
         pom-xml     (make-pom project version repositories dependencies src-paths)]
     #((pass-thru-wrap create-jar!) % project version src-paths output-dir tmp-dir :main main :manifest manifest :pom pom-xml)))
+
+(deftask repl
+  "Launch nrepl in project."
+  [boot]
+  #((pass-thru-wrap launch-nrepl) % {}))

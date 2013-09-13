@@ -5,4 +5,5 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.apache.maven/maven-model "3.0.4"
                   :exclusions [org.codehaus.plexus/plexus-utils]]
-                 [org.clojure/clojurescript "0.0-1820"]])
+                 [org.clojure/clojurescript "0.0-1820"]
+                 [reply "0.2.0"]])
