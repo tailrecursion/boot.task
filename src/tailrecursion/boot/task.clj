@@ -194,7 +194,13 @@
         pom-xml     (make-pom project version repositories dependencies src-paths)]
     #((pass-thru-wrap create-jar!) % project version src-paths output-dir tmp-dir :main main :manifest manifest :pom pom-xml)))
 
+;; Start a REPL with project in classpath ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn custom-eval [sym]
+  `(do (when (try (require '~sym) ::ok (catch Throwable _#)) (in-ns '~sym))))
+
 (deftask repl
   "Launch nrepl in project."
-  [boot]
-  #((pass-thru-wrap launch-nrepl) % {}))
+  [boot & [sym]]
+  (let [sym (or sym (:repl-ns @boot))]
+    #((pass-thru-wrap launch-nrepl) % (if sym {:custom-eval (custom-eval sym)} {}))))
