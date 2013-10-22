@@ -2,11 +2,17 @@
 
 Various generally useful build tasks.
 
-| Task | Description |
-|------|-------------|
-| env  | Print the boot configuration. |
-| debug | Print the event map. |
-| watch | Monitor source files for changes and rebuild when necessary. |
+| Task  | Description                                                         |
+|-------|---------------------------------------------------------------------|
+| env   | Print the boot configuration.                                       |
+| debug | Print the event map.                                                |
+| watch | Monitor source files for changes and rebuild when necessary.        |
+| sync  | Sync directories, similar to `rsync --delete`.                      |
+| cljs  | Compile ClojureScript source files.                                 |
+| jar   | Create a jar file from project.                                     |
+| repl  | Start a repl in project.                                            |
+
+For more info do `boot help <task>`.
 
 ### Example
 
