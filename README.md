@@ -6,7 +6,6 @@ Various generally useful build tasks.
 
 ```clojure
 ;; boot.edn
-
 {:project ...
  :version ...
  :dependencies [[tailrecursion/boot.task "0.1.2"] ...]
