@@ -6,7 +6,8 @@ Various generally useful build tasks.
 |-------|---------------------------------------------------------------------|
 | env   | Print the boot configuration.                                       |
 | debug | Print the event map.                                                |
-| watch | Monitor source files for changes and rebuild when necessary. This task must come before other tasks. |
+| watch | Monitor source files for changes and rebuild when necessary. This \
+          task must come before other tasks. |
 | sync  | Sync directories, similar to `rsync --delete`.                      |
 | cljs  | Compile ClojureScript source files.                                 |
 | jar   | Create a jar file from project.                                     |
