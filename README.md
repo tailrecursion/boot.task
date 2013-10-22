@@ -12,7 +12,7 @@ Various generally useful build tasks.
 | jar   | Create a jar file from project.                                     |
 | repl  | Start a repl in project.                                            |
 
-For more info do `boot help <task>`.
+For more info about a task do `boot help <task>`.
 
 ### Example
 
