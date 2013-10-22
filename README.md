@@ -2,6 +2,19 @@
 
 Various generally useful build tasks.
 
+### Example
+
+```clojure
+;; boot.edn
+
+{:project ...
+ :version ...
+ :dependencies [[tailrecursion/boot.task "0.1.2"] ...]
+ :require-tasks #{[tailrecursion.boot.task :refer :all] ...}
+ ...
+ ...}
+```
+
 ### Dependency
 
 Artifacts are published on [Clojars][1]. This version is compatible with
