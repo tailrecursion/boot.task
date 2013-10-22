@@ -29,7 +29,7 @@ For more info about a task do `boot [help <task>]`.
 ### Dependency
 
 Artifacts are published on [Clojars][1]. This version is compatible with
-[boot][2] version [0.1.0][3] or later.
+[boot][2] version [0.1.1][3] or later.
 
 ```clojure
 [tailrecursion/boot.task "0.1.2"]
@@ -51,5 +51,5 @@ Distributed under the Eclipse Public License, the same as Clojure.
 
 [1]: https://clojars.org/tailrecursion/boot.task
 [2]: https://github.com/tailrecursion/boot
-[3]: https://github.com/tailrecursion/boot/tree/0.1.0
+[3]: https://github.com/tailrecursion/boot/tree/0.1.1
 
