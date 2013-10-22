@@ -124,8 +124,12 @@
       (auto boot msec)
       (fn [continue]
         (fn [event]
-          (let [info  (reduce (partial merge-with union) (map #(%) watchers))]
-            (if-let [mods (->> (or type :time) (get info) (map file) (remove ign?) seq)]
+          (let [clean #(assoc %2 %1 (set (remove ign? (get %2 %1))))
+                info  (->> (map #(%) watchers)
+                        (reduce (partial merge-with union))
+                        (clean :time)
+                        (clean :hash))]
+            (if-let [mods (->> (or type :time) (get info) seq)]
               (let [path  (f/path (first mods))
                     xtr   (when-let [c (and (next mods) (count (next mods)))]
                             (format " and %d other%s" c (if (< 1 c) "s" "")))
