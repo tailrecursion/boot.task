@@ -2,6 +2,12 @@
 
 Various generally useful build tasks.
 
+| Task | Description |
+|------|-------------|
+| env  | Print the boot configuration. |
+| debug | Print the event map. |
+| watch | Monitor source files for changes and rebuild when necessary. |
+
 ### Example
 
 ```clojure
