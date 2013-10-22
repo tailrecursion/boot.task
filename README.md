@@ -1,30 +1,7 @@
 # boot.task
 
-Various generally useful build tasks.
-
-| Task  | Description                                                         |
-|-------|---------------------------------------------------------------------|
-| env   | Print the boot configuration.                                       |
-| debug | Print the event map.                                                |
-| watch | Monitor source files for changes and rebuild when necessary. This task must come before other tasks. |
-| sync  | Sync directories, similar to `rsync --delete`.                      |
-| cljs  | Compile ClojureScript source files.                                 |
-| jar   | Create a jar file from project.                                     |
-| repl  | Start a repl in project.                                            |
-
-For more info about a task do `boot [help <task>]`.
-
-### Example
-
-```clojure
-;; boot.edn
-{:project ...
- :version ...
- :dependencies [[tailrecursion/boot.task "0.1.2"] ...]
- :require-tasks #{[tailrecursion.boot.task :refer :all] ...}
- ...
- ...}
-```
+This project contains a number of generally useful tasks for the [boot][2]
+Clojure build tool.
 
 ### Dependency
 
@@ -41,6 +18,32 @@ Artifacts are published on [Clojars][1]. This version is compatible with
   <artifactId>boot.task</artifactId>
   <version>0.1.2</version>
 </dependency>
+```
+
+### Tasks
+
+| Task  | Description                                                         |
+|-------|---------------------------------------------------------------------|
+| env   | Print the boot configuration.                                       |
+| debug | Print the event map.                                                |
+| watch | Monitor source files for changes and rebuild when necessary. This task must come before other tasks. |
+| sync  | Sync directories, similar to `rsync --delete`.                      |
+| cljs  | Compile ClojureScript source files.                                 |
+| jar   | Create a jar file from project.                                     |
+| repl  | Start a repl in project.                                            |
+
+For more info about a task do `boot [help <task>]`.
+
+### Usage
+
+```clojure
+;; boot.edn
+{:project ...
+ :version ...
+ :dependencies [[tailrecursion/boot.task "0.1.2"] ...]
+ :require-tasks #{[tailrecursion.boot.task :refer :all] ...}
+ ...
+ ...}
 ```
 
 ## License
