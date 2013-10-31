@@ -49,5 +49,6 @@
       (set-dependencies! dependencies))))
 
 (defn make-pom [& args]
+  (println "Creating pom.xml...")
   (let [model (apply build-model args)]
     (with-out-str (.write (MavenXpp3Writer.) *out* model))))

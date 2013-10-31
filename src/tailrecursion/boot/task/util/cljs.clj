@@ -25,6 +25,7 @@
     (swap! last-counter inc)))
 
 (defn install-deps [src-paths depjars incs exts libs flibs]
+  (println "Installing ClojureScript dependencies...")
   (let [match     #(last (re-find #"[^.]+\.([^.]+)\.js$" %))
         dirmap    {"inc" incs "ext" exts "lib" libs "flib" flibs}
         outfile   #(file %1 (str (format "%010d" (dep-counter!)) "_" (f/name %2)))
@@ -39,6 +40,7 @@
 
 (defn compile-cljs
   [src-paths depjars flib-out lib-out ext-out inc-out {:keys [output-to] :as opts}]
+  (println "Compiling ClojureScript...")
   (assert output-to "No :output-to option specified.")
   (when (-> (->> src-paths (map file) (mapcat file-seq) (filter f/file?)) 
             (->> (map f/name) (filter (partial re-find #"\.cljs$")) seq)) 

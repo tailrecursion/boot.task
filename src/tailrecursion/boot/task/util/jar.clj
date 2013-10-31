@@ -47,6 +47,7 @@
       (doto target (.putNextEntry (ent base src)) (write! src) (.closeEntry)))))
 
 (defn create-jar! [project version src-dirs output-dir tmp-dir & {:keys [main manifest pom]}]
+  (println "Creating jar file...")
   (let [[group-id artifact-id] (extract-ids project)
         pom-xml   ((if (f/file? pom) slurp str) pom) 
         boot-clj  (f/exists? (file "boot.clj"))
