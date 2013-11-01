@@ -13,7 +13,7 @@
     [tailrecursion.boot.gitignore       :as g]
     [reply.main                         :refer [launch-nrepl]]
     [clojure.pprint                     :refer [pprint]]
-    [clojure.string                     :refer [blank? join]]
+    [clojure.string                     :as s :refer [blank? join]]
     [clojure.java.io                    :refer [file delete-file make-parents]]
     [clojure.set                        :refer [difference intersection union]]
     [clojure.stacktrace                 :refer [print-stack-trace print-cause-trace]]
@@ -22,30 +22,19 @@
     [tailrecursion.boot.task.util.pom   :refer [make-pom]]
     [tailrecursion.boot.task.util.jar   :refer [create-jar!]]
     [tailrecursion.boot.core            :refer [deftask make-event mk! mkdir!
-                                                add-sync! sync! tmpfile? ignored?]])
-  (:import
-    [java.io StringWriter]))
+                                                add-sync! sync! tmpfile? ignored?]]))
 
-(defmacro with-out-err-str [& body]
-  `(let [out# (new StringWriter)
-         err# (new StringWriter)]
-     (binding [*out* out#, *err* err#]
-       ~@body
-       [(str out#) (str err#)])))
+;; Util ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmacro print-time [msg ok out fail expr]
+(defmacro print-time [ok fail expr]
   `(let [start# (System/currentTimeMillis)]
      (try
-       (printf ~msg)
-       (flush)
-       (let [printed# (with-out-err-str ~expr)
+       (let [val# ~expr
              end# (double (/ (- (System/currentTimeMillis) start#) 1000))]
-         (if (some (complement blank?) printed#)
-           (printf ~out (join "\n\n" (remove blank? printed#)) end#)
-           (printf ~ok end#)))
+         (printf ~ok end#))
        (catch Throwable e#
-         (printf ~fail (with-out-str (print-cause-trace e# 10))
-                       (double (/ (- (System/currentTimeMillis) start#) 1000))))
+         (printf ~fail (str "\033[31m" (with-out-str (print-cause-trace e# 10)) "\033[0m") 
+                 (double (/ (- (System/currentTimeMillis) start#) 1000))))
        (finally (flush)))))
 
 ;; Task builders ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -117,7 +106,7 @@
       (fn [event]
         (continue event)
         (Thread/sleep (or msec 200)) 
-        (recur (make-event event))))))
+        (recur (make-event boot event))))))
 
 ;; Process event if watched src-paths have modified files in them ;;;;;;;;;;;
 
@@ -141,20 +130,18 @@
               (let [path  (f/path (first mods))
                     xtr   (when-let [c (and (next mods) (count (next mods)))]
                             (format " and %d other%s" c (if (< 1 c) "s" "")))
-                    msg   (format "Building %s%s ... " path (str xtr))
-                    ok    "okay. %.3f sec - 00:00:00 "
-                    out   (format "info:\n\n%%s\nBuilding %s ... okay. %%.3f sec - 00:00:00 " path)
-                    fail  (format "dang!\n\n%%s\nBuilding %s ... fail. %%.3f sec - 00:00:00 " path)]
+                    ok    "\033[34m↳ Elapsed time: %6.3f sec ›\033[33m 00:00:00 \033[0m"
+                    fail  "\n%s\n\033[34m↳ Elapsed time: %6.3f sec ›\033[33m 00:00:00 \033[0m"]
                 (when (not= 0 @since) (println) (flush)) 
                 (reset! since (:time event))
-                (print-time msg ok out fail (continue (assoc event :watch info))))
+                (print-time ok fail (continue (assoc event :watch info))))
               (let [diff  (long (/ (- (:time event) @since) 1000))
                     pad   (apply str (repeat 9 "\b"))
                     s     (mod diff 60)
                     m     (mod (long (/ diff 60)) 60)
                     h     (mod (long (/ diff 3600)) 24)]
                 (sync! boot)
-                (printf "%s%02d:%02d:%02d " pad h m s)
+                (printf "\033[33m%s%02d:%02d:%02d \033[0m" pad h m s)
                 (flush)))))))))
 
 ;; Sync (copy) files between directories ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

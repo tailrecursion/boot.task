@@ -9,14 +9,14 @@ Artifacts are published on [Clojars][1]. This version is compatible with
 [boot][2] version [0.1.1][3] or later.
 
 ```clojure
-[tailrecursion/boot.task "0.1.2"]
+[tailrecursion/boot.task "0.1.3"]
 ```
 
 ```xml
 <dependency>
   <groupId>tailrecursion</groupId>
   <artifactId>boot.task</artifactId>
-  <version>0.1.2</version>
+  <version>0.1.3</version>
 </dependency>
 ```
 
@@ -40,7 +40,7 @@ For more info about a task do `boot [help <task>]`.
 ;; boot.edn
 {:project ...
  :version ...
- :dependencies [[tailrecursion/boot.task "0.1.2"] ...]
+ :dependencies [[tailrecursion/boot.task "0.1.3"] ...]
  :require-tasks #{[tailrecursion.boot.task :refer :all] ...}
  ...
  ...}
