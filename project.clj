@@ -1,8 +1,9 @@
-(defproject tailrecursion/boot.task "0.1.3"
-  :description "Useful tasks for the boot Clojure build tool."
-  :url "http://github.com/tailrecursion/boot.task"
-  :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.apache.maven/maven-model "3.0.4"
+(defproject tailrecursion/boot.task "0.1.4"
+  :description  "Useful tasks for the boot Clojure build tool."
+  :url          "http://github.com/tailrecursion/boot.task"
+  :license      {:name  "Eclipse Public License"
+                 :url   "http://www.eclipse.org/legal/epl-v10.html"}
+  :dependencies [[tailrecursion/boot.core "1.0.0"]
+                 [org.apache.maven/maven-model "3.0.4"
                   :exclusions [org.codehaus.plexus/plexus-utils]]
                  [reply "0.2.0"]])
