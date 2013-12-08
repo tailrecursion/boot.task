@@ -6,17 +6,17 @@ Clojure build tool.
 ### Dependency
 
 Artifacts are published on [Clojars][1]. This version is compatible with
-[boot][2] version [0.1.1][3] or later.
+[boot.core][4] version [1.0.0][3] or later.
 
 ```clojure
-[tailrecursion/boot.task "0.1.3"]
+[tailrecursion/boot.task "1.0.0"]
 ```
 
 ```xml
 <dependency>
   <groupId>tailrecursion</groupId>
   <artifactId>boot.task</artifactId>
-  <version>0.1.3</version>
+  <version>1.0.0</version>
 </dependency>
 ```
 
@@ -40,7 +40,9 @@ For more info about a task do `boot [help <task>]`.
 ;; boot.edn
 {:project ...
  :version ...
- :dependencies [[tailrecursion/boot.task "0.1.3"] ...]
+ :dependencies [[tailrecursion/boot.core "1.0.0"]
+                [tailrecursion/boot.task "1.0.0"]
+                ...]
  :require-tasks #{[tailrecursion.boot.task :refer :all] ...}
  ...
  ...}
@@ -54,5 +56,6 @@ Distributed under the Eclipse Public License, the same as Clojure.
 
 [1]: https://clojars.org/tailrecursion/boot.task
 [2]: https://github.com/tailrecursion/boot
-[3]: https://github.com/tailrecursion/boot/tree/0.1.1
+[3]: https://github.com/tailrecursion/boot.core/tree/1.0.0
+[4]: https://github.com/tailrecursion/boot.core
 
