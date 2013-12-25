@@ -172,7 +172,7 @@
         ext-out     (mkdir! boot ::ext-out)
         inc-out     (mkdir! boot ::inc-out)
         x-opts      (->> {:output-to  (f/path output-to)
-                          :output-dir output-dir}
+                          :output-dir (f/path output-dir)}
                       (merge base-opts opts))]
     (make-parents output-to) 
     (f/clean! output-to flib-out lib-out ext-out inc-out) 
