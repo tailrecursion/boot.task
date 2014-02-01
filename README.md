@@ -34,7 +34,7 @@ For more info about a task do `boot [help <task>]`.
   :dependencies [[tailrecursion/boot.task "..."] ...]
   ...)
 
-(require '[[tailrecursion.boot.task :refer :all] ...])
+(require '[tailrecursion.boot.task :refer :all] ...)
 ```
 
 ## License
