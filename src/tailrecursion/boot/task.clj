@@ -20,30 +20,35 @@
 
 (c/deftask cljs
   "Compile ClojureScript source files."
-  [& {:keys [output-to opts]}]
+  [& {:keys [output-path opts] :or {output-path "main.js"}}]
   (c/consume-src! (partial c/by-ext [".clj" ".cljs" ".inc.js" ".ext.js"]))
   (let [depjars    (c/deps)
         base-opts  {:warnings      true
                     :externs       []
                     :libs          []
                     :foreign-libs  []
-                    :pretty-print  true
+                    :pretty-print  false
                     :optimizations :whitespace}
-        output-to  (io/file output-to)
         src-paths  (c/get-env :src-paths)
         inc-out    (c/mktmpdir! ::inc-out)
         ext-out    (c/mktmpdir! ::ext-out)
         lib-out    (c/mktmpdir! ::lib-out)
         flib-out   (c/mktmpdir! ::flib-out)
         output-dir (c/mktmpdir! ::output-dir)
-        x-opts     (->> {:output-to  (f/path output-to)
-                         :output-dir (f/path output-dir)}
-                     (merge base-opts opts))]
-    (io/make-parents output-to) 
-    (f/clean! output-to flib-out lib-out ext-out inc-out) 
+        cljs-out   (c/mktmpdir! ::cljs-out)
+        cljs-stage (c/mkoutdir! ::cljs-stage)
+        x-opts     (->> {:output-dir (f/path output-dir)} (merge base-opts opts))]
+    (c/consume-src! (partial c/by-ext [".clj" ".cljs"]))
     (cljs/install-deps src-paths depjars inc-out ext-out lib-out flib-out)
     (c/with-pre-wrap
-      (cljs/compile-cljs src-paths depjars flib-out lib-out ext-out inc-out x-opts))))
+      (when-let [srcs (c/newer? (c/by-ext [".cljs"] (c/src-files)) cljs-out)]
+        (c/mktmpdir! ::cljs-out)
+        (println "Compiling ClojureScript...")
+        (let [src-paths (c/get-env :src-paths)
+              js-out    (doto (io/file cljs-out output-path) io/make-parents)
+              opts      (assoc x-opts :output-to (.getPath js-out))]
+          (cljs/compile-cljs src-paths flib-out lib-out ext-out inc-out opts)))
+      (c/sync! cljs-stage cljs-out))))
 
 ;; Build jar files ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

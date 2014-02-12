@@ -1,4 +1,4 @@
-(defproject tailrecursion/boot.task "2.0.0"
+(defproject tailrecursion/boot.task "2.0.1"
   :description  "Useful tasks for the boot Clojure build tool."
   :url          "http://github.com/tailrecursion/boot.task"
   :license      {:name "Eclipse Public License"

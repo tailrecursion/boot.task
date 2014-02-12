@@ -14,8 +14,7 @@
     (mapcat #(cljs/-compile % opts) paths)))
 
 (defn compile
-  [src-paths depjars flib-out lib-out ext-out inc-out {:keys [output-to] :as opts}]
-  (println "Compiling ClojureScript...")
+  [src-paths flib-out lib-out ext-out inc-out {:keys [output-to] :as opts}]
   (assert output-to "No :output-to option specified.")
   (let [files #(filter (fn [x] (.isFile x)) (file-seq %))
         paths #(mapv (fn [x] (.getPath x)) (files %))
