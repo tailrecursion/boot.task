@@ -21,34 +21,43 @@
 (c/deftask cljs
   "Compile ClojureScript source files."
   [& {:keys [output-path opts] :or {output-path "main.js"}}]
-  (c/consume-src! (partial c/by-ext [".clj" ".cljs" ".inc.js" ".ext.js"]))
   (let [depjars    (c/deps)
-        base-opts  {:warnings      true
-                    :externs       []
-                    :libs          []
-                    :foreign-libs  []
-                    :pretty-print  false
-                    :optimizations :whitespace}
+        src-map?   (:source-map opts)
         src-paths  (c/get-env :src-paths)
         inc-out    (c/mktmpdir! ::inc-out)
         ext-out    (c/mktmpdir! ::ext-out)
         lib-out    (c/mktmpdir! ::lib-out)
         flib-out   (c/mktmpdir! ::flib-out)
         output-dir (c/mktmpdir! ::output-dir)
-        cljs-out   (c/mktmpdir! ::cljs-out)
+        cljs-tmp   (c/mktmpdir! ::cljs-tmp)
+        cljs-tmp2  (c/mktmpdir! ::cljs-tmp2)
         cljs-stage (c/mkoutdir! ::cljs-stage)
-        x-opts     (->> {:output-dir (f/path output-dir)} (merge base-opts opts))]
-    (c/consume-src! (partial c/by-ext [".clj" ".cljs"]))
+        js-out     (doto (io/file cljs-tmp output-path) io/make-parents)
+        smap       (io/file cljs-tmp (str output-path ".map")) 
+        smap-path  (str (.getParent (io/file output-path)))
+        base-opts  {:warnings      true
+                    :externs       []
+                    :libs          []
+                    :foreign-libs  []
+                    :pretty-print  false
+                    :optimizations :whitespace
+                    :output-dir    (.getPath output-dir)
+                    :output-to     (.getPath js-out)}
+        ;; see https://github.com/clojure/clojurescript/wiki/Source-maps
+        smap-opts  {:source-map-path smap-path
+                    :source-map      (.getPath smap)
+                    :output-dir      (.getPath cljs-tmp)}
+        x-opts     (merge base-opts opts (when src-map? smap-opts))]
+    (c/consume-src!
+      (partial c/by-ext
+        (into [".inc.js" ".ext.js"] (if src-map? [] [".clj" ".cljs"]))))
     (cljs/install-deps src-paths depjars inc-out ext-out lib-out flib-out)
     (c/with-pre-wrap
-      (when-let [srcs (c/newer? (c/by-ext [".cljs"] (c/src-files)) cljs-out)]
-        (c/mktmpdir! ::cljs-out)
+      (when-let [srcs (seq (c/newer? (c/by-ext [".cljs"] (c/src-files)) cljs-tmp2))]
         (println "Compiling ClojureScript...")
-        (let [src-paths (c/get-env :src-paths)
-              js-out    (doto (io/file cljs-out output-path) io/make-parents)
-              opts      (assoc x-opts :output-to (.getPath js-out))]
-          (cljs/compile-cljs src-paths flib-out lib-out ext-out inc-out opts)))
-      (c/sync! cljs-stage cljs-out))))
+        (cljs/compile-cljs (c/get-env :src-paths) flib-out lib-out ext-out inc-out x-opts)
+        (c/sync! cljs-tmp2 cljs-tmp))
+      (c/sync! cljs-stage cljs-tmp2))))
 
 ;; Build jar files ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
