@@ -47,4 +47,4 @@ Distributed under the Eclipse Public License, the same as Clojure.
 [2]: https://github.com/tailrecursion/boot
 [3]: https://github.com/tailrecursion/boot.core/tree/2.0.0
 [4]: https://github.com/tailrecursion/boot.core
-[5]: https://clojars.org/tailrecursion/boot.task/latest-version.svg
+[5]: https://clojars.org/tailrecursion/boot.task/latest-version.svg?bustcache=1
