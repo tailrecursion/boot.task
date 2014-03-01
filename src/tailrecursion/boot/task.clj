@@ -29,11 +29,9 @@
         lib-out    (c/mktmpdir! ::lib-out)
         flib-out   (c/mktmpdir! ::flib-out)
         output-dir (c/mktmpdir! ::output-dir)
-        cljs-tmp   (c/mktmpdir! ::cljs-tmp)
-        cljs-tmp2  (c/mktmpdir! ::cljs-tmp2)
         cljs-stage (c/mkoutdir! ::cljs-stage)
-        js-out     (doto (io/file cljs-tmp output-path) io/make-parents)
-        smap       (io/file cljs-tmp (str output-path ".map")) 
+        js-out     (io/file cljs-stage output-path)
+        smap       (io/file cljs-stage (str output-path ".map")) 
         smap-path  (str (.getParent (io/file output-path)))
         base-opts  {:warnings      true
                     :externs       []
@@ -46,18 +44,16 @@
         ;; see https://github.com/clojure/clojurescript/wiki/Source-maps
         smap-opts  {:source-map-path smap-path
                     :source-map      (.getPath smap)
-                    :output-dir      (.getPath cljs-tmp)}
+                    :output-dir      (.getPath cljs-stage)}
         x-opts     (merge base-opts opts (when src-map? smap-opts))]
     (c/consume-src!
       (partial c/by-ext
         (into [".inc.js" ".ext.js"] (if src-map? [] [".clj" ".cljs"]))))
     (cljs/install-deps src-paths depjars inc-out ext-out lib-out flib-out)
     (c/with-pre-wrap
-      (when-let [srcs (seq (c/newer? (c/by-ext [".cljs"] (c/src-files)) cljs-tmp2))]
-        (println "Compiling ClojureScript...")
-        (cljs/compile-cljs (c/get-env :src-paths) flib-out lib-out ext-out inc-out x-opts)
-        (c/sync! cljs-tmp2 cljs-tmp))
-      (c/sync! cljs-stage cljs-tmp2))))
+      (println "Compiling ClojureScript...")
+      (io/make-parents js-out)
+      (cljs/compile-cljs src-paths flib-out lib-out ext-out inc-out x-opts))))
 
 ;; Build jar files ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
