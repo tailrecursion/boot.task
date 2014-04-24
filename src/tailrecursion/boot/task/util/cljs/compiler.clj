@@ -14,7 +14,7 @@
   (-compile [this opts]
     (mapcat #(cljs/-compile % opts) paths)))
 
-(def cljs-env (atom {}))
+(def cljs-env (env/default-compiler-env))
 
 (defn compile
   [src-paths flib-out lib-out ext-out inc-out {:keys [output-to] :as opts}]
