@@ -8,29 +8,44 @@
 
 (ns tailrecursion.boot.task.util.cljs
   (:require 
-    [tailrecursion.boot.file  :as f]
-    [clojure.string           :refer [split join blank?]]
-    [clojure.pprint           :refer [pprint]]
-    [clojure.java.io          :refer [input-stream output-stream file
-                                      delete-file make-parents]]))
+    [clojure.java.io :as io]
+    [clojure.string  :as string]))
 
-(let [last-counter (atom 0)]
-  (defn- dep-counter! []
-    (swap! last-counter inc)))
+(defn copy-resource
+  [resource-path out-path]
+  (with-open [in  (io/input-stream (io/resource resource-path))
+              out (io/output-stream (io/file out-path))]
+    (io/copy in out)))
 
-(defn install-deps [src-paths depjars incs exts libs flibs]
-  (println "Installing ClojureScript dependencies...")
-  (let [match     #(last (re-find #"[^.]+\.([^.]+)\.js$" %))
-        dirmap    {"inc" incs "ext" exts "lib" libs "flib" flibs}
-        outfile   #(file %1 (str (format "%010d" (dep-counter!)) "_" (f/name %2)))
-        write1    #(when-let [d (dirmap (match %1))]
-                     (spit (doto (outfile d %1) make-parents) (slurp %2))) 
-        write     #(map (partial apply write1) %)
-        path-seq  (fn [x] (map f/path (file-seq (file x))))
-        dep-files (->> depjars (map second) (mapcat identity))
-        src-files (->> src-paths (mapcat path-seq) (keep f/file?))]
-    (doall (->> dep-files reverse write))
-    (doall (->> src-files sort (map (juxt identity file)) write))))
+(defn install-inc [deps srcs dep-dir src-dir]
+  (let [filter* (partial filter #(re-find #"\.inc\.js$" (first %)))
+        dep-out (io/file dep-dir "hoplon-include.js")
+        src-out (io/file src-dir "hoplon-include.js")
+        cat     #(->> % (map (comp slurp second)) (string/join "\n"))
+        write   #(doall (spit %2 (cat (filter* %1)) :append %3))
+        do-deps (memoize #(do (write deps dep-out false) ::ok))]
+    (do-deps)
+    (io/copy dep-out src-out)
+    (write srcs src-out true)
+    (.getPath src-out)))
+
+(defn install-files [re deps srcs dep-dir src-dir]
+  (let [outpath #(str (gensym) "-" (.getName (io/file %)))
+        outfile #(doto (io/file %1 %2) io/make-parents)
+        filter* (partial filter #(re-find re (first %)))
+        copysrc #(io/copy (second %) (outfile src-dir (outpath (first %))))
+        copyres #(copy-resource (first %) (outfile dep-dir (outpath (first %))))
+        write   #(do (doall (map %2 (filter* %1))) ::ok)
+        do-deps (memoize #(write deps copyres))]
+    (do-deps)
+    (write srcs copysrc)
+    (->> (file-seq dep-dir)
+      (concat (file-seq src-dir))
+      (filter #(.isFile %))
+      (map #(.getPath %)))))
+
+(def install-ext (partial install-files #"\.ext\.js$"))
+(def install-lib (partial install-files #"\.lib\.js$"))
 
 (defn compile-cljs [& args]
   (require 'tailrecursion.boot.task.util.cljs.compiler)
