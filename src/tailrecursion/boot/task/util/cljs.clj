@@ -8,8 +8,9 @@
 
 (ns tailrecursion.boot.task.util.cljs
   (:require 
-    [clojure.java.io :as io]
-    [clojure.string  :as string]))
+   [tailrecursion.boot.core :as boot]
+   [clojure.java.io :as io]
+   [clojure.string  :as string]))
 
 (defn copy-resource
   [resource-path out-path]
@@ -17,26 +18,28 @@
               out (io/output-stream (io/file out-path))]
     (io/copy in out)))
 
-(defn install-inc [deps srcs dep-dir src-dir]
+(defn do-once [state f] #(when (compare-and-set! state nil true) (f)))
+
+(defn install-inc [state deps srcs dep-dir src-dir]
   (let [filter* (partial filter #(re-find #"\.inc\.js$" (first %)))
         dep-out (io/file dep-dir "hoplon-include.js")
         src-out (io/file src-dir "hoplon-include.js")
         cat     #(->> % (map (comp slurp second)) (string/join "\n"))
         write   #(doall (spit %2 (cat (filter* %1)) :append %3))
-        do-deps (memoize #(do (write deps dep-out false) ::ok))]
+        do-deps (do-once state #(do (write deps dep-out false) ::ok))]
     (do-deps)
     (io/copy dep-out src-out)
     (write srcs src-out true)
     (.getPath src-out)))
 
-(defn install-files [re deps srcs dep-dir src-dir]
+(defn install-files [re state deps srcs dep-dir src-dir]
   (let [outpath #(str (gensym) "-" (.getName (io/file %)))
         outfile #(doto (io/file %1 %2) io/make-parents)
         filter* (partial filter #(re-find re (first %)))
         copysrc #(io/copy (second %) (outfile src-dir (outpath (first %))))
         copyres #(copy-resource (first %) (outfile dep-dir (outpath (first %))))
         write   #(do (doall (map %2 (filter* %1))) ::ok)
-        do-deps (memoize #(write deps copyres))]
+        do-deps (do-once state #(write deps copyres))]
     (do-deps)
     (write srcs copysrc)
     (->> (file-seq dep-dir)

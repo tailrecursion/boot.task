@@ -1,28 +1,24 @@
 (ns tailrecursion.boot.task.util.cljs.compiler
   (:refer-clojure :exclude [compile])
   (:require 
-    [tailrecursion.boot.file  :as f]
+    [clojure.java.io          :as io]
     [cljs.env                 :as env]
-    [cljs.closure             :as cljs]
-    [clojure.string           :refer [split join blank?]]
-    [clojure.pprint           :refer [pprint]]
-    [clojure.java.io          :refer [input-stream output-stream file
-                                      delete-file make-parents]]))
+    [cljs.closure             :as cljs]))
 
 (defrecord CljsSourcePaths [paths]
   cljs/Compilable
   (-compile [this opts]
     (mapcat #(cljs/-compile % opts) paths)))
 
-(def cljs-env (env/default-compiler-env))
+(let [stored-env (atom nil)]
+  (defn cljs-env [opts]
+    (compare-and-set! stored-env nil (env/default-compiler-env opts))
+    @stored-env))
 
 (defn compile
   [src-paths libs exts prelude {:keys [output-to] :as opts}]
-  (assert output-to "No :output-to option specified.")
-  (env/with-compiler-env cljs-env
-    (cljs/build
-      (CljsSourcePaths. (filter #(.exists (file %)) src-paths))
-      (-> opts
-        (update-in [:externs] into exts)
-        (update-in [:libs] into libs))))
-  (spit output-to (str (slurp prelude) "\n" (slurp output-to))))
+  (let [opts (-> opts (update-in [:externs] into exts) (update-in [:libs] into libs))]
+    (assert output-to "No :output-to option specified.")
+    (binding [env/*compiler* (cljs-env opts)]
+      (cljs/build (CljsSourcePaths. (filter #(.exists (io/file %)) src-paths)) opts))
+    (spit output-to (str (slurp prelude) "\n" (slurp output-to)))))
