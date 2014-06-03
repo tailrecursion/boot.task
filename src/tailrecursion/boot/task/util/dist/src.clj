@@ -7,10 +7,9 @@
 
 (ns tailrecursion.boot.task.util.dist.src
   (:require 
-    [tailrecursion.boot.file               :as f]
-    [tailrecursion.boot.task.util          :as u]
-    [clojure.pprint                        :refer [pprint]]
-    [clojure.java.io                       :refer [copy input-stream output-stream file delete-file make-parents]])
+    [tailrecursion.boot.file      :as f]
+    [tailrecursion.boot.task.util :as u]
+    [clojure.java.io              :as io] )
   (:import
     [java.io       File]
     [java.util.jar JarEntry JarOutputStream] ))
@@ -19,7 +18,7 @@
 
 (defn- write! [^JarOutputStream stream ^File file]
   (let [buf (byte-array 1024)] 
-    (with-open [in (input-stream file)]
+    (with-open [in (io/input-stream file)]
       (loop [n (.read in buf)]
         (when-not (= -1 n)
           (.write stream buf 0 n)
@@ -27,16 +26,15 @@
 
 (defn- add! [^JarOutputStream stream ^File tgt-path ^File src-base ^File src-path]
   (let [rel #(.getPath  (f/relative-to %1 %2))
-        ent #(doto (JarEntry. (.getPath (file %1 (rel %2 %3)))) (.setTime (.lastModified %3))) ]
+        ent #(doto (JarEntry. (.getPath (io/file %1 (rel %2 %3)))) (.setTime (.lastModified %3))) ]
     (if (f/dir? src-path)
-      (doseq [f (.listFiles src-path)] (add! stream tgt-path src-base f) )
+      (u/dotoseq stream [f (.listFiles src-path)] (add! tgt-path src-base f) )
       (doto stream (.putNextEntry (ent tgt-path src-base src-path)) (write! src-path) (.closeEntry)) )))
 
 ;;; public ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn add-src! [src-paths & [tgt-path]]
-  (println "Copying source files...")
-  #_(let [tgt-file (if tgt-path (file tgt-path))(file tgt-path)])
+  (println "Adding source files...")
   (fn [^JarOutputStream stream]
-    (u/dotoseq stream [s src-paths :let [src-path (file s)]]
-      (add! (file tgt-path) src-path src-path) )))
+    (u/dotoseq stream [s src-paths :let [src-path (io/file s)]]
+      (add! (io/file tgt-path) src-path src-path) )))

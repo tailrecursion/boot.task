@@ -14,6 +14,7 @@
    [tailrecursion.boot.task.util          :as u]
    [tailrecursion.boot.task.util.cljs     :as j]
    [tailrecursion.boot.task.util.dist     :refer [spit-dist!]]
+   [tailrecursion.boot.task.util.dist.dep :refer [add-dep!]]
    [tailrecursion.boot.task.util.dist.pom :refer [pom-xml add-pom! spit-pom!]]
    [tailrecursion.boot.task.util.dist.src :refer [add-src!]]
    [tailrecursion.boot.task.util.dist.web :refer [add-web!]] ))
@@ -86,6 +87,19 @@
         (spit-dist! file main manifest
           (add-web! aid (c/get-env :description) "/*" "test-class" )
           (add-src! src-paths "WEB-INF/classes") )))))
+
+(c/deftask uberwar
+  "Build an uberwar file."
+  [& {:keys [main manifest]}]
+  (u/let-assert-keys [dst-path src-paths project version (c/get-env)]
+    (let [aid  (second (u/extract-ids project))
+          main (if main main (c/get-env :main))
+          file (io/file dst-path (filename aid version "war")) ]
+      (c/with-pre-wrap
+        (spit-dist! file main manifest
+          (add-web! aid (c/get-env :description) "/*" "test-class" )
+          (add-src! src-paths "WEB-INF/classes")
+          (add-dep! (c/get-env :repositories) (c/get-env :dependencies)) )))))
 
 (c/deftask install
   "Build and install the jar and pom files into the local repository."

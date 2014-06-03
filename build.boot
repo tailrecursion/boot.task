@@ -6,7 +6,7 @@
 (apply set-env! (:prod config))
 
 (require
-  '[tailrecursion.boot.task         :refer [install jar war]] )
+  '[tailrecursion.boot.task         :refer [install jar war uberwar]] )
 
 (deftask with-profile
   "Setup build for the given profile from `config.edn`."

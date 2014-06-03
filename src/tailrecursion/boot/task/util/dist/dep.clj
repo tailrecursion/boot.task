@@ -5,8 +5,39 @@
 ;;; terms of this license.  You must not remove this notice, or any other, from this software.
 ;;;-------------------------------------------------------------------------------------------------
 
-(ns tailrecursion.boot.task.util.dist.dep)
+(ns tailrecursion.boot.task.util.dist.dep
+  (:require
+    [tailrecursion.boot.deps      :as d]
+    [tailrecursion.boot.task.util :as u]
+    [clojure.java.io              :as io] )
+  (:import 
+    [java.io       File]
+    [java.util.jar JarEntry JarOutputStream] ))
 
 ;;; private ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- write! [^JarOutputStream stream ^File file]
+  (let [buf (byte-array 1024)] 
+    (with-open [in (io/input-stream file)]
+      (loop [n (.read in buf)]
+        (when-not (= -1 n)
+          (.write stream buf 0 n)
+          (recur (.read in buf)) )))))
+
+(defn jar-files [reps deps]
+  (->> ((d/resolve-deps!) deps reps)
+    (map :jar)
+    (filter #(.endsWith % ".jar"))
+    (map io/file) ))
+
 ;;; public ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn add-dep! [reps deps]
+  (println "Adding jar file dependencies...")
+  (let [path "WEB-INF/lib/"
+        jars (jar-files reps deps)]
+    (fn [^JarOutputStream stream]
+      (u/dotoseq stream [jar jars]
+        (.putNextEntry (JarEntry. (str path (.getName jar))))
+        (write! jar)
+        (.closeEntry) ))))

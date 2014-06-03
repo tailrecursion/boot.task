@@ -16,18 +16,6 @@
   (let [[group artifact] ((juxt namespace name) sym)]
     [(or group artifact) artifact] ))
 
-(defn parse-args [[head & tail :as args]]
-  (let [kw1? (comp keyword? first)
-        mkkw #(->> (partition 2 %) (take-while kw1?) (map vec))
-        drkw #(->> (partition 2 2 [] %) (drop-while kw1?) (mapcat identity))]
-    (cond (map?     head) [head tail]
-          (keyword? head) [(into {} (mkkw args)) (drkw args)]
-          :else           [{} args]) ))
-
-(defmacro defelem [name & forms]
-  (let [[_ name [_ & [[bind & body]]]] (macroexpand-1 `(defn ~name ~@forms))]
-    `(def ~name (fn [& args#] (let [~bind (parse-args args#)] ~@body))) ))
-
 (defmacro let-assert-keys [binding & body]
   "Let expression that throws an exception when any of the expected bindings is missing."
   (let [[ks m] [(butlast binding) (last binding)]

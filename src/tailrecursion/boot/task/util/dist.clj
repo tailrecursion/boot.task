@@ -14,7 +14,7 @@
 ;;; constants ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def dfl-attr
-  {"Created-By"  "boot"
+  {"Created-By"  "Tailrecursion Boot Build Tool"
    "Built-By"    (System/getProperty "user.name")
    "Build-Jdk"   (System/getProperty "java.version") })
 
