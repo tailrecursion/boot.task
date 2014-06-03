@@ -12,10 +12,13 @@ Artifacts are published on Clojars. This version is compatible with
 
 ### Tasks
 
-| Task          | Description                                                 |
-|---------------|-------------------------------------------------------------|
-| cljs          | Compile ClojureScript source files.                         |
-| jar           | Create a jar file from project.                             |
+| Task        | Description                                                   |
+|-------------|---------------------------------------------------------------|
+| cljs        | Compile ClojureScript source files.                           |
+| install     | Create and place a jar in the local maven repository.         |
+| jar         | Create Java Archive distribution from project.                |
+| uberwar     | Create Web Application ARchive from project and dependencies. |
+| war         | Create Web Application ARchive from project.                  |
 
 For more info about a task do `boot [help <task>]`.
 

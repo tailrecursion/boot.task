@@ -1,22 +1,28 @@
-;; Copyriuht (c) Alan Dipert and Micha Niskin. All rights reserved.
-;; The use and distribution terms for this software are covered by the
-;; Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
-;; which can be found in the file epl-v10.html at the root of this distribution.
-;; By using this software in any fashion, you are agreeing to be bound by
-;; the terms of this license.
-;; You must not remove this notice, or any other, from this software.
+;;;-------------------------------------------------------------------------------------------------
+;;; Copyright Alan Dipert, Micha Niskin, & jumblerg. All rights reserved. The use and distribution 
+;;; terms for this software are covered by the Eclipse Public License 1.0 (http://www.eclipse.org/
+;;; legal/epl-v10.html). By using this software in any fashion, you are agreeing to be bound by the 
+;;; terms of this license.  You must not remove this notice, or any other, from this software.
+;;;-------------------------------------------------------------------------------------------------
 
 (ns tailrecursion.boot.task
   (:refer-clojure :exclude [sync])
-  (:require 
-   [clojure.java.io                    :as io]
-   [tailrecursion.boot.core            :as c]
-   [tailrecursion.boot.file            :as f]
-   [tailrecursion.boot.task.util.pom   :as p]
-   [tailrecursion.boot.task.util.jar   :as j]
-   [tailrecursion.boot.task.util.cljs  :as cljs]))
+  (:require
+   [clojure.java.io                       :as io]
+   [tailrecursion.boot.core               :as c]
+   [tailrecursion.boot.file               :as f]
+   [tailrecursion.boot.task.util          :as u]
+   [tailrecursion.boot.task.util.cljs     :as j]
+   [tailrecursion.boot.task.util.dist     :refer [spit-dist!]]
+   [tailrecursion.boot.task.util.dist.pom :refer [pom-xml add-pom! spit-pom!]]
+   [tailrecursion.boot.task.util.dist.src :refer [add-src!]]
+   [tailrecursion.boot.task.util.dist.web :refer [add-web!]] ))
 
-;; Compile ClojureScript ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; utilities ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn filename [aid vers ext] (str (if aid (str aid "-" vers) "project") "." ext))
+
+;;; tasks ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (c/deftask cljs
   "Compile ClojureScript source files."
@@ -45,28 +51,58 @@
         smap-opts  {:source-map-path smap-path
                     :source-map      (.getPath smap)
                     :output-dir      (.getPath cljs-stage)}
-        x-opts     (merge base-opts opts (when src-map? smap-opts))]
+        x-opts     (merge base-opts opts (when src-map? smap-opts)) ]
     (c/consume-src!
       (partial c/by-ext
         (into [".inc.js" ".ext.js"] (if src-map? [] [".clj" ".cljs"]))))
-    (cljs/install-deps src-paths depjars inc-out ext-out lib-out flib-out)
+    (j/install-deps src-paths depjars inc-out ext-out lib-out flib-out)
     (c/with-pre-wrap
       (println "Compiling ClojureScript...")
       (io/make-parents js-out)
-      (cljs/compile-cljs src-paths flib-out lib-out ext-out inc-out x-opts))))
-
-;; Build jar files ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      (j/compile-cljs src-paths flib-out lib-out ext-out inc-out x-opts) )))
 
 (c/deftask jar
   "Build a jar file."
   [& {:keys [main manifest]}]
-  (assert
-    (and (c/get-env :project) (c/get-env :version))
-    "Both :project and :version must be defined.")
-  (c/with-pre-wrap
-    (let [{:keys [project version repositories dependencies src-paths]} (c/get-env)
-          src-paths  (map io/file src-paths)
-          output-dir (c/mkoutdir! ::jar-out-dir)
-          tmp-dir    (c/mktmpdir! ::jar-tmp-dir)
-          pom-xml    (p/make-pom project version repositories dependencies src-paths)]
-      (j/create-jar! project version src-paths output-dir tmp-dir :main main :manifest manifest :pom pom-xml))))
+  (u/let-assert-keys [dst-path src-paths project version (c/get-env)]
+    (let [[gid aid] (u/extract-ids project)
+          {d :description u :url {ln :name lu :url} :license deps :dependencies reps :repositories} (c/get-env)
+          main     (if main main (c/get-env :main))
+          pom-xml  (pom-xml gid aid version d u ln lu deps reps) 
+          jar-file (io/file dst-path (filename aid version "jar")) ]
+      (c/with-pre-wrap
+        (spit-dist! jar-file main manifest
+          (add-pom! gid aid version pom-xml)
+          (add-src! src-paths) )))))
+
+(c/deftask war
+  "Build a war file."
+  [& {:keys [main manifest]}]
+  (u/let-assert-keys [dst-path src-paths project version (c/get-env)]
+    (let [aid  (second (u/extract-ids project))
+          main (if main main (c/get-env :main))
+          file (io/file dst-path (filename aid version "war")) ]
+      (c/with-pre-wrap
+        (spit-dist! file main manifest
+          (add-web! aid (c/get-env :description) "/*" "test-class" )
+          (add-src! src-paths "WEB-INF/classes") )))))
+
+(c/deftask install
+  "Build and install the jar and pom files into the local repository."
+  [& {:keys [main manifest]}]
+  (require 'cemerick.pomegranate.aether)
+  (u/let-assert-keys [dst-path src-paths project version (c/get-env)]
+    (let [[gid aid] (u/extract-ids project)
+          {d :description u :url {ln :name lu :url} :license deps :dependencies reps :repositories} (c/get-env)
+          main     (if main main (c/get-env :main))
+          tmp-dir  (c/mktmpdir! ::tmp-dir)
+          jar-file (io/file tmp-dir (filename aid version "jar")) 
+          pom-xml  (pom-xml gid aid version d u ln lu deps reps) 
+          pom-file (io/file tmp-dir (filename aid version "pom"))
+          install  (resolve 'cemerick.pomegranate.aether/install)]
+      (c/with-pre-wrap
+        (spit-dist! jar-file main manifest
+          (add-pom! gid aid version pom-xml)
+          (add-src! src-paths) )
+        (spit-pom! pom-file pom-xml)
+        (install :coordinates [project version] :jar-file jar-file :pom-file pom-file) ))))

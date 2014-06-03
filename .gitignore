@@ -1,5 +1,6 @@
-/target
+/tgt
 /lib
+/dst
 /classes
 /checkouts
 pom.xml
@@ -15,4 +16,4 @@ pom.xml.asc
 *.swp
 .boot/tmp
 /boot
-/tmp/
+/tmp
