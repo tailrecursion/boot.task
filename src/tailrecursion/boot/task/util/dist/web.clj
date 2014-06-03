@@ -45,11 +45,11 @@
     (description  d)
     elems ))
 
-(defn web-xml [name desc url class & params]
+(defn web-xml [name desc class & [params]]
   (web-app :name name :description desc 
     (servlet :name name :class class (for [[n v] params] 
       (init-param :name n :value v) )) 
-    (servlet-mapping :name name :url url) ))
+    (servlet-mapping :name name :url "/*") ))
 
 ;;; public ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

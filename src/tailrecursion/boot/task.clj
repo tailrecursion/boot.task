@@ -82,10 +82,11 @@
   (u/let-assert-keys [dst-path src-paths project version (c/get-env)]
     (let [aid  (second (u/extract-ids project))
           main (if main main (c/get-env :main))
-          file (io/file dst-path (filename aid version "war")) ]
+          file (io/file dst-path (filename aid version "war")) 
+          {c :class p :init-params} (c/get-env :servlet) ]
       (c/with-pre-wrap
         (spit-dist! file main manifest
-          (add-web! aid (c/get-env :description) "/*" "test-class" )
+          (add-web! aid (c/get-env :description) c p)
           (add-src! src-paths "WEB-INF/classes") )))))
 
 (c/deftask uberwar
@@ -94,10 +95,11 @@
   (u/let-assert-keys [dst-path src-paths project version (c/get-env)]
     (let [aid  (second (u/extract-ids project))
           main (if main main (c/get-env :main))
-          file (io/file dst-path (filename aid version "war")) ]
+          file (io/file dst-path (filename aid version "war")) 
+          {c :class p :init-params} (c/get-env :servlet) ]
       (c/with-pre-wrap
         (spit-dist! file main manifest
-          (add-web! aid (c/get-env :description) "/*" "test-class" )
+          (add-web! aid (c/get-env :description) c p)
           (add-src! src-paths "WEB-INF/classes")
           (add-dep! (c/get-env :repositories) (c/get-env :dependencies)) )))))
 

@@ -16,4 +16,8 @@
                         [org.clojure/data.xml         "0.0.7"]]
           :src-paths    #{"src"}
           :out-path     "tgt"
-          :dst-path     "dst"]}
+          :dst-path     "dst"
+          :servlet      {:class       "core"
+                         :init-params {"create"  "tailrecursion.holpon.servlet/create"
+                                       "service" "tailrecursion.holpon.servlet/service"
+                                       "destroy" "tailrecursion.holpon.servlet/destroy"}} ]}
