@@ -7,11 +7,10 @@
 
 (ns tailrecursion.boot.task.util.xml
   (:require
-   [clojure.pprint :refer [pprint]]
    [clojure.java.io              :as io]
    [clojure.xml                  :as xml]
    [clojure.data.xml             :as dxml]
-   [alandipert.desiderata.invoke :as invoke])
+   [alandipert.desiderata.invoke :as invoke] )
   (:import
    [java.io ByteArrayInputStream]))
  

@@ -7,7 +7,8 @@
 
 (ns tailrecursion.boot.task.util.dist.dep
   (:require
-    [tailrecursion.boot.deps      :as d]
+    [tailrecursion.boot.kahnsort   :as k]
+    ;[tailrecursion.boot.deps      :as d]
     [tailrecursion.boot.task.util :as u]
     [clojure.java.io              :as io] )
   (:import 
@@ -25,10 +26,13 @@
           (recur (.read in buf)) )))))
 
 (defn jar-files [reps deps]
-  (->> ((d/resolve-deps!) deps reps)
-    (map :jar)
-    (filter #(.endsWith % ".jar"))
-    (map io/file) ))
+  (require 'cemerick.pomegranate.aether)
+  (let [resolve-dependencies (resolve 'cemerick.pomegranate.aether/resolve-dependencies)]
+    (->> (resolve-dependencies :repositories (zipmap reps reps) :coordinates deps)
+      (k/topo-sort)
+      (map #(.getPath (:file (meta %))))
+      (filter #(.endsWith % ".jar"))
+      (map io/file) )))
 
 ;;; public ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

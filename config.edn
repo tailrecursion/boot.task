@@ -6,7 +6,7 @@
 ;;;-------------------------------------------------------------------------------------------------
 
 {:prod  [:project      tailrecursion/boot.task
-         :version      "3.0.4-SNAPSHOT"
+         :version      "3.0.0-SNAPSHOT"
          :url          "http://github.com/tailrecursion/boot.task"
          :description  "Useful tasks for the boot Clojure build tool."
          :license      {:name "Eclipse Public License" 
@@ -17,7 +17,4 @@
           :src-paths    #{"src"}
           :out-path     "tgt"
           :dst-path     "dst"
-          :servlet      {:class       "core"
-                         :init-params {"create"  "tailrecursion.holpon.servlet/create"
-                                       "service" "tailrecursion.holpon.servlet/service"
-                                       "destroy" "tailrecursion.holpon.servlet/destroy"}} ]}
+          :servlet      {:handler tailrecursion.hoplon.servlet/create}]}
