@@ -7,7 +7,7 @@
 ;; You must not remove this notice, or any other, from this software.
 
 (ns tailrecursion.boot.task.util.cljs
-  (:require 
+  (:require
    [tailrecursion.boot.core :as boot]
    [clojure.java.io :as io]
    [clojure.string  :as string]))
@@ -24,9 +24,14 @@
   (let [filter* (partial filter #(re-find #"\.inc\.js$" (first %)))
         dep-out (io/file dep-dir "hoplon-include.js")
         src-out (io/file src-dir "hoplon-include.js")
-        cat     #(->> % (map (comp slurp second)) (string/join "\n"))
+        cat     #(->> %
+                      (map (fn [x]
+                             (println "•" (first  x))
+                             (slurp (second x))))
+                      (string/join "\n"))
         write   #(doall (spit %2 (cat (filter* %1)) :append %3))
         do-deps (do-once state #(do (write deps dep-out false) ::ok))]
+    (println "Included JS files...")
     (do-deps)
     (io/copy dep-out src-out)
     (write srcs src-out true)
