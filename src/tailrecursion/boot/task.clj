@@ -51,6 +51,7 @@
                       :externs       []
                       :libs          []
                       :foreign-libs  []
+                      :preamble      []
                       :pretty-print  false
                       :optimizations :whitespace
                       :output-dir    (.getPath output-dir)
@@ -65,7 +66,7 @@
         (into [".inc.js" ".ext.js"] (if src-map? [] [".clj" ".cljs"]))))
     (c/with-pre-wrap
       (println "Compiling ClojureScript...")
-      (let [src-inc-out  (c/mktmpdir! ::src-inc-out)
+      (let [src-inc-out  (c/mksrcdir! ::src-inc-out)
             src-ext-out  (c/mktmpdir! ::src-ext-out)
             src-lib-out  (c/mktmpdir! ::src-lib-out)
             prelude      (cljs/install-inc install-inc? deps (srcfiles) dep-inc-out src-inc-out)

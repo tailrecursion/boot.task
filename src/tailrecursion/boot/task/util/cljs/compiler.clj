@@ -17,8 +17,10 @@
 
 (defn compile
   [src-paths libs exts prelude {:keys [output-to] :as opts}]
-  (let [opts (-> opts (update-in [:externs] into exts) (update-in [:libs] into libs))]
+  (let [opts (-> opts
+               (update-in [:externs] into exts)
+               (update-in [:libs] into libs)
+               (update-in [:preamble] conj prelude))]
     (assert output-to "No :output-to option specified.")
     (binding [env/*compiler* (cljs-env opts)]
-      (cljs/build (CljsSourcePaths. (filter #(.exists (io/file %)) src-paths)) opts))
-    (spit output-to (str (slurp prelude) "\n" (slurp output-to)))))
+      (cljs/build (CljsSourcePaths. (filter #(.exists (io/file %)) src-paths)) opts))))

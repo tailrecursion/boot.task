@@ -22,15 +22,15 @@
 
 (defn install-inc [state deps srcs dep-dir src-dir]
   (let [filter* (partial filter #(re-find #"\.inc\.js$" (first %)))
-        dep-out (io/file dep-dir "hoplon-include.js")
-        src-out (io/file src-dir "hoplon-include.js")
+        dep-out (io/file dep-dir "c6f4dce0-0384-11e4-9191-0800200c9a66.dep.prelude.js")
+        src-out (io/file src-dir "c6f4dce0-0384-11e4-9191-0800200c9a66.prelude.js")
         cat     #(->> % (map (comp slurp second)) (string/join "\n"))
         write   #(doall (spit %2 (cat (filter* %1)) :append %3))
         do-deps (do-once state #(do (write deps dep-out false) ::ok))]
     (do-deps)
     (io/copy dep-out src-out)
     (write srcs src-out true)
-    (.getPath src-out)))
+    (.getName src-out)))
 
 (defn install-files [re state deps srcs dep-dir src-dir]
   (let [outpath #(str (gensym) "-" (.getName (io/file %)))
