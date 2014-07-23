@@ -45,8 +45,7 @@
         install-ext? (atom nil)
         install-lib? (atom nil)
         js-out       (io/file cljs-stage output-path)
-        smap         (io/file cljs-stage (str output-path ".map")) 
-        smap-path    (str (.getParent (io/file output-path)))
+        smap         (io/file (.getParentFile js-out) (str (.getName js-out) ".map")) 
         base-opts    {:warnings      true
                       :externs       []
                       :libs          []
@@ -57,9 +56,9 @@
                       :output-dir    (.getPath output-dir)
                       :output-to     (.getPath js-out)}
         ;; see https://github.com/clojure/clojurescript/wiki/Source-maps
-        smap-opts    {:source-map-path smap-path
+        smap-opts    {:source-map-path ""
                       :source-map      (.getPath smap)
-                      :output-dir      (.getPath cljs-stage)}
+                      :output-dir      (.getPath (.getParentFile js-out))}
         x-opts       (merge base-opts opts (when src-map? smap-opts))]
     (c/consume-src!
       (partial c/by-ext
