@@ -37,7 +37,7 @@
         src-map?     (:source-map opts)
         src-paths    (c/get-env :src-paths)
         output-dir   (c/mktmpdir! ::output-dir)
-        cljs-stage   (c/mkoutdir! ::cljs-stage)
+        cljs-stage   (c/mktmpdir! ::cljs-stage)
         dep-lib-out  (c/mktmpdir! ::dep-lib-out)
         dep-inc-out  (c/mktmpdir! ::dep-inc-out)
         dep-ext-out  (c/mktmpdir! ::dep-ext-out)
@@ -65,14 +65,16 @@
         (into [".inc.js" ".ext.js"] (if src-map? [] [".clj" ".cljs"]))))
     (c/with-pre-wrap
       (println "Compiling ClojureScript...")
-      (let [src-inc-out  (c/mksrcdir! ::src-inc-out)
+      (let [cljs-out     (c/mkoutdir! ::cljs-out)
+            src-inc-out  (c/mksrcdir! ::src-inc-out)
             src-ext-out  (c/mktmpdir! ::src-ext-out)
             src-lib-out  (c/mktmpdir! ::src-lib-out)
             prelude      (cljs/install-inc install-inc? deps (srcfiles) dep-inc-out src-inc-out)
             externs      (cljs/install-ext install-ext? deps (srcfiles) dep-ext-out src-ext-out)
             libs         (cljs/install-lib install-lib? deps (srcfiles) dep-lib-out src-lib-out)]
         (io/make-parents js-out)
-        (cljs/compile-cljs src-paths libs externs prelude x-opts)))))
+        (cljs/compile-cljs src-paths libs externs prelude x-opts)
+        (c/sync! cljs-out cljs-stage)))))
 
 ;; Build jar files ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
