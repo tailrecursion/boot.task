@@ -1,16 +1,14 @@
 #!/usr/bin/env boot
 
-#tailrecursion.boot.core/version "2.4.0"
+#tailrecursion.boot.core/version "2.5.0"
 
-(def config (read-string (slurp "config.edn")))
-(apply set-env! (:prod config))
+(apply set-env! (read-string (slurp "config.edn")))
+(add-sync! (get-env :out-path) (get-env :rsc-paths))
 
 (require
-  '[tailrecursion.boot.task         :refer [dep-tree install jar war uberwar]] )
+  '[tailrecursion.boot.task        :refer [dep-tree install jar uberwar war]]
+  '[tailrecursion.boot.task.notify :refer [hear]] )
 
-(deftask with-profile
-  "Setup build for the given profile from `config.edn`."
-  [profile]
-  (apply set-env! (get config profile))
-  (add-sync! (get-env :out-path) (get-env :rsc-paths))
-  identity )
+(deftask develop []
+  "rebuild and reinstall the library to ~/m2."
+  (comp (watch) (hear) (jar) (install)) )

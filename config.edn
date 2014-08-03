@@ -1,20 +1,26 @@
 ;;;-------------------------------------------------------------------------------------------------
-;;; Copyright Alan Dipert, Micha Niskin, & jumblerg. All rights reserved. The use and distribution 
+;;; Copyright Alan Dipert, Micha Niskin, & jumblerg. All rights reserved. The use and distribution
 ;;; terms for this software are covered by the Eclipse Public License 1.0 (http://www.eclipse.org/
-;;; legal/epl-v10.html). By using this software in any fashion, you are agreeing to be bound by the 
+;;; legal/epl-v10.html). By using this software in any fashion, you are agreeing to be bound by the
 ;;; terms of this license.  You must not remove this notice, or any other, from this software.
 ;;;-------------------------------------------------------------------------------------------------
 
-{:prod  [:project      tailrecursion/boot.task
-         :version      "3.0.0-SNAPSHOT"
-         :url          "http://github.com/tailrecursion/boot.task"
-         :description  "Useful tasks for the boot Clojure build tool."
-         :license      {:name "Eclipse Public License" 
-                        :url  "http://www.eclipse.org/legal/epl-v10.html"}
-         :dependencies [[alandipert/desiderata        "1.0.2"]
-                        [com.cemerick/pomegranate     "0.3.0"]
-                        [org.clojure/data.xml         "0.0.7"]]
-          :src-paths    #{"src"}
-          :out-path     "tgt"
-          :dst-path     "dst"
-          :servlet      {:handler tailrecursion.hoplon.servlet/create}]}
+[:project      tailrecursion/boot.task
+ :version      "3.0.0-SNAPSHOT"
+ :url          "http://github.com/tailrecursion/boot.task"
+ :description  "Useful tasks for the boot Clojure build tool."
+ :license      {:name "Eclipse Public License"
+                :url  "http://www.eclipse.org/legal/epl-v10.html"}
+ :dependencies [[alandipert/desiderata        "1.0.2"]
+                [com.cemerick/pomegranate     "0.3.0"]
+                [org.clojure/data.xml         "0.0.7"]
+                [tailrecursion/boot.notify    "2.0.2" :scope "test"]]
+  :src-paths    #{"src"}
+  :out-path     "tgt"
+  :dst-path     "dst"
+  ; servlet included for test purposes only
+  :servlet      {:name        "Boot Test Servlet"
+                 :class       tailrecursion.hoplon.Service
+                 :init-params {:init    tailrecursion.hoplon.service/init
+                               :service tailrecursion.hoplon.service/service
+                               :destroy tailrecursion.hoplon.service/destroy}}]

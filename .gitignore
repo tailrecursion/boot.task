@@ -17,3 +17,4 @@ pom.xml.asc
 .boot/tmp
 /boot
 /tmp
+.DS_Store
