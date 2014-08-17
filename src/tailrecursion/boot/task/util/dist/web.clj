@@ -1,7 +1,7 @@
 ;;;-------------------------------------------------------------------------------------------------
-;;; Copyright Alan Dipert, Micha Niskin, & jumblerg. All rights reserved. The use and distribution 
+;;; Copyright Alan Dipert, Micha Niskin, & jumblerg. All rights reserved. The use and distribution
 ;;; terms for this software are covered by the Eclipse Public License 1.0 (http://www.eclipse.org/
-;;; legal/epl-v10.html). By using this software in any fashion, you are agreeing to be bound by the 
+;;; legal/epl-v10.html). By using this software in any fashion, you are agreeing to be bound by the
 ;;; terms of this license.  You must not remove this notice, or any other, from this software.
 ;;;-------------------------------------------------------------------------------------------------
 
@@ -10,6 +10,7 @@
     [clojure.java.io                  :refer [writer]]
     [tailrecursion.boot.task.util.xml :refer [decelems defelem element]] )
   (:import
+    ;[tailrecursion ClojureAdapterServlet]
     [java.util.jar JarEntry JarOutputStream] ))
 
 ;;; elements ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -26,7 +27,7 @@
 (defelem servlet [{n :name c :class} elems]
   (element :servlet
     (servlet-name  n)
-    (servlet-class c) 
+    (servlet-class c)
     elems ))
 
 (defelem servlet-mapping [{n :name u :url}]
@@ -45,10 +46,12 @@
     (description  d)
     elems ))
 
-(defn web-xml [name desc class & [params]]
-  (web-app :name name :description desc 
-    (servlet :name name :class class (for [[n v] params] 
-      (init-param :name n :value v) )) 
+(defn web-xml [name desc srv]
+  (web-app :name name :description desc
+    (servlet :name name :class "tailrecursion.ClojureAdapterServlet"
+      (init-param :name "create"  :value (str srv "/create"))
+      (init-param :name "serve"   :value (str srv "/serve"))
+      (init-param :name "destroy" :value (str srv "/destroy")) )
     (servlet-mapping :name name :url "/*") ))
 
 ;;; public ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -56,8 +59,9 @@
 (defn add-web! [& args]
   (println "Creating web.xml...")
   (let [path "WEB-INF/web.xml"
-        web-xml (apply web-xml args) ]
+        web-xml (apply web-xml args)]
     (fn [^JarOutputStream stream]
       (.putNextEntry stream (JarEntry. path))
       (.write stream (.getBytes (pr-str web-xml)))
-      (.closeEntry stream) )))
+      (.closeEntry stream)
+      stream )))

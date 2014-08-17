@@ -11,16 +11,10 @@
  :description  "Useful tasks for the boot Clojure build tool."
  :license      {:name "Eclipse Public License"
                 :url  "http://www.eclipse.org/legal/epl-v10.html"}
- :dependencies [[alandipert/desiderata        "1.0.2"]
-                [com.cemerick/pomegranate     "0.3.0"]
-                [org.clojure/data.xml         "0.0.7"]
-                [tailrecursion/boot.notify    "2.0.2" :scope "test"]]
+ :dependencies [[alandipert/desiderata                 "1.0.2"]
+                [com.cemerick/pomegranate              "0.3.0"]
+                [tailrecursion/clojure-adapter-servlet "0.1.0-SNAPSHOT"]
+                [org.clojure/data.xml                  "0.0.7"] ]
   :src-paths    #{"src"}
   :out-path     "tgt"
-  :dst-path     "dst"
-  ; servlet included for test purposes only
-  :servlet      {:name        "Boot Test Servlet"
-                 :class       tailrecursion.hoplon.Service
-                 :init-params {:init    tailrecursion.hoplon.service/init
-                               :service tailrecursion.hoplon.service/service
-                               :destroy tailrecursion.hoplon.service/destroy}}]
+  :dst-path     "dst" ]

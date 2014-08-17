@@ -1,12 +1,11 @@
 ;;;-------------------------------------------------------------------------------------------------
-;;; Copyright Alan Dipert, Micha Niskin, & jumblerg. All rights reserved. The use and distribution 
+;;; Copyright Alan Dipert, Micha Niskin, & jumblerg. All rights reserved. The use and distribution
 ;;; terms for this software are covered by the Eclipse Public License 1.0 (http://www.eclipse.org/
-;;; legal/epl-v10.html). By using this software in any fashion, you are agreeing to be bound by the 
+;;; legal/epl-v10.html). By using this software in any fashion, you are agreeing to be bound by the
 ;;; terms of this license.  You must not remove this notice, or any other, from this software.
 ;;;-------------------------------------------------------------------------------------------------
 
 (ns tailrecursion.boot.task
-  (:refer-clojure :exclude [sync])
   (:require
    [clojure.java.io                       :as io]
    [tailrecursion.boot.core               :as c]
@@ -39,7 +38,7 @@
         output-dir (c/mktmpdir! ::output-dir)
         cljs-stage (c/mkoutdir! ::cljs-stage)
         js-out     (io/file cljs-stage output-path)
-        smap       (io/file cljs-stage (str output-path ".map")) 
+        smap       (io/file cljs-stage (str output-path ".map"))
         smap-path  (str (.getParent (io/file output-path)))
         base-opts  {:warnings      true
                     :externs       []
@@ -67,7 +66,7 @@
   "Show dependency hierarchy"
   []
   (let [{reps :repositories deps :dependencies} (c/get-env)]
-    (c/with-pre-wrap 
+    (c/with-pre-wrap
       (list-deps reps deps)) ))
 
 (c/deftask jar
@@ -77,7 +76,7 @@
     (let [[gid aid] (u/extract-ids project)
           {d :description u :url {ln :name lu :url} :license deps :dependencies reps :repositories} (c/get-env)
           main     (if main main (c/get-env :main))
-          pom-xml  (pom-xml gid aid version d u ln lu deps reps) 
+          pom-xml  (pom-xml gid aid version d u ln lu deps reps)
           jar-file (io/file dst-path (filename aid version "jar")) ]
       (c/with-pre-wrap
         (spit-dist! jar-file main manifest
@@ -90,11 +89,10 @@
   (u/let-assert-keys [dst-path src-paths project version servlet (c/get-env)]
     (let [aid  (second (u/extract-ids project))
           main (if main main (c/get-env :main))
-          file (io/file dst-path (filename aid version "war")) 
-          {c :handler p :init-params} servlet] ;; fix invalid handler -> class mapping
+          file (io/file dst-path (filename aid version "war")) ] ;; fix invalid handler -> class mapping
       (c/with-pre-wrap
         (spit-dist! file main manifest
-          (add-web! aid (c/get-env :description) c p)
+          (add-web! aid (c/get-env :description) servlet)
           (add-src! src-paths "WEB-INF/classes") )))))
 
 (c/deftask uberwar
@@ -103,11 +101,10 @@
   (u/let-assert-keys [dst-path src-paths project version servlet (c/get-env)]
     (let [aid  (second (u/extract-ids project))
           main (if main main (c/get-env :main))
-          file (io/file dst-path (filename aid version "war")) 
-          {c :handler p :init-params} servlet] ;; fix invalid handler -> class mapping
+          file (io/file dst-path (filename aid version "war")) ] ;; fix invalid handler -> class mapping
       (c/with-pre-wrap
         (spit-dist! file main manifest
-          (add-web! aid (c/get-env :description) c p)
+          (add-web! aid (c/get-env :description) servlet)
           (add-src! src-paths "WEB-INF/classes")
           (add-dep! (c/get-env :repositories) (c/get-env :dependencies)) )))))
 
@@ -120,8 +117,8 @@
           {d :description u :url {ln :name lu :url} :license deps :dependencies reps :repositories} (c/get-env)
           main     (if main main (c/get-env :main))
           tmp-dir  (c/mktmpdir! ::tmp-dir)
-          jar-file (io/file tmp-dir (filename aid version "jar")) 
-          pom-xml  (pom-xml gid aid version d u ln lu deps reps) 
+          jar-file (io/file tmp-dir (filename aid version "jar"))
+          pom-xml  (pom-xml gid aid version d u ln lu deps reps)
           pom-file (io/file tmp-dir (filename aid version "pom"))
           install  (resolve 'cemerick.pomegranate.aether/install)]
       (c/with-pre-wrap

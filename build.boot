@@ -6,9 +6,8 @@
 (add-sync! (get-env :out-path) (get-env :rsc-paths))
 
 (require
-  '[tailrecursion.boot.task        :refer [dep-tree install jar uberwar war]]
-  '[tailrecursion.boot.task.notify :refer [hear]] )
+  '[tailrecursion.boot.task :refer [dep-tree install jar uberwar war]] )
 
 (deftask develop []
   "rebuild and reinstall the library to ~/m2."
-  (comp (watch) (hear) (jar) (install)) )
+  (comp (watch) (install)) )
