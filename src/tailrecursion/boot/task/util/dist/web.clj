@@ -10,7 +10,6 @@
     [clojure.java.io                  :refer [writer]]
     [tailrecursion.boot.task.util.xml :refer [decelems defelem element]] )
   (:import
-    ;[tailrecursion ClojureAdapterServlet]
     [java.util.jar JarEntry JarOutputStream] ))
 
 ;;; elements ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

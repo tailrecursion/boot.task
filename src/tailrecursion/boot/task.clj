@@ -72,12 +72,13 @@
 (c/deftask jar
   "Build a jar file."
   [& {:keys [main manifest]}]
-  (u/let-assert-keys [dst-path src-paths project version (c/get-env)]
+  (u/let-assert-keys [src-paths project version (c/get-env)]
     (let [[gid aid] (u/extract-ids project)
           {d :description u :url {ln :name lu :url} :license deps :dependencies reps :repositories} (c/get-env)
           main     (if main main (c/get-env :main))
           pom-xml  (pom-xml gid aid version d u ln lu deps reps)
-          jar-file (io/file dst-path (filename aid version "jar")) ]
+          out-dir  (c/mkoutdir! ::jar-out)
+          jar-file (io/file out-dir (filename aid version "jar")) ]
       (c/with-pre-wrap
         (spit-dist! jar-file main manifest
           (add-pom! gid aid version pom-xml)
@@ -86,10 +87,11 @@
 (c/deftask war
   "Build a war file."
   [& {:keys [main manifest]}]
-  (u/let-assert-keys [dst-path src-paths project version servlet (c/get-env)]
+  (u/let-assert-keys [src-paths project version servlet (c/get-env)]
     (let [aid  (second (u/extract-ids project))
           main (if main main (c/get-env :main))
-          file (io/file dst-path (filename aid version "war")) ] ;; fix invalid handler -> class mapping
+          dir  (c/mkoutdir! ::war-out)
+          file (io/file dir (filename aid version "war")) ] ;; fix invalid handler -> class mapping
       (c/with-pre-wrap
         (spit-dist! file main manifest
           (add-web! aid (c/get-env :description) servlet)
@@ -98,10 +100,11 @@
 (c/deftask uberwar
   "Build an uberwar file."
   [& {:keys [main manifest]}]
-  (u/let-assert-keys [dst-path src-paths project version servlet (c/get-env)]
+  (u/let-assert-keys [src-paths project version servlet (c/get-env)]
     (let [aid  (second (u/extract-ids project))
           main (if main main (c/get-env :main))
-          file (io/file dst-path (filename aid version "war")) ] ;; fix invalid handler -> class mapping
+          dir  (c/mkoutdir! ::uberwar-out)
+          file (io/file dir (filename aid version "war")) ] ;; fix invalid handler -> class mapping
       (c/with-pre-wrap
         (spit-dist! file main manifest
           (add-web! aid (c/get-env :description) servlet)
@@ -112,7 +115,7 @@
   "Build and install the jar and pom files into the local repository."
   [& {:keys [main manifest]}]
   (require 'cemerick.pomegranate.aether)
-  (u/let-assert-keys [dst-path src-paths project version (c/get-env)]
+  (u/let-assert-keys [src-paths project version (c/get-env)]
     (let [[gid aid] (u/extract-ids project)
           {d :description u :url {ln :name lu :url} :license deps :dependencies reps :repositories} (c/get-env)
           main     (if main main (c/get-env :main))

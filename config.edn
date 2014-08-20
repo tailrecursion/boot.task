@@ -16,5 +16,4 @@
                 [tailrecursion/clojure-adapter-servlet "0.1.0-SNAPSHOT"]
                 [org.clojure/data.xml                  "0.0.7"] ]
   :src-paths    #{"src"}
-  :out-path     "tgt"
-  :dst-path     "dst" ]
+  :out-path     "tgt" ]

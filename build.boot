@@ -1,5 +1,4 @@
 #!/usr/bin/env boot
-
 #tailrecursion.boot.core/version "2.5.0"
 
 (apply set-env! (read-string (slurp "config.edn")))
